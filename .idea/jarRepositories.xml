@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="RemoteRepositoriesConfiguration">
+    <remote-repository>
+      <option name="id" value="central" />
+      <option name="name" value="Maven Central repository" />
+      <option name="url" value="https://repo1.maven.org/maven2" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="jboss.community" />
+      <option name="name" value="JBoss Community repository" />
+      <option name="url" value="https://repository.jboss.org/nexus/content/repositories/public/" />
+    </remote-repository>
+    <remote-repository>
+      <option name="id" value="894e23e9-8871-40bf-8010-2a98295b0f09" />
+      <option name="name" value="894e23e9-8871-40bf-8010-2a98295b0f09" />
+      <option name="url" value="ftp://ftp.nlm.nih.gov/nlmdata/tools_repo/public_html/gov/nih/nlm/umls/umls-uts-ws-client-classes/" />
+    </remote-repository>
+  </component>
+</project>
