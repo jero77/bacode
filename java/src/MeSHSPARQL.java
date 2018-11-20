@@ -15,9 +15,10 @@ public class MeSHSPARQL {
         // Setup filtered OutputStream to CSV-File
         FileOutputStream fileos = null;
         try {
-            fileos = new FileOutputStream("out\\csv\\meshtest.csv");
+            fileos = new FileOutputStream("out\\csv\\mesh.csv");
         } catch (FileNotFoundException e) {
             e.printStackTrace();
+            System.exit(-1);
         }
         MeSHFilterOutputStream filteros = new MeSHFilterOutputStream(fileos);
 
