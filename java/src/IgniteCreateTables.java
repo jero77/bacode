@@ -14,20 +14,28 @@ public class IgniteCreateTables {
     public static void main(String[] args) {
 
         Connection conn = null;
+        Statement stmt = null;
+        System.out.println("Initializing connection to the cluster ...");
         try {
+            // Initialize connection and statement
             conn = getConnection();
+            System.out.println("Connected to he cluster!");
+            stmt = conn.createStatement();
+
+            // Create and Fill the tables
+            createTables(conn);
+            System.out.println("Created tables!");
+            fillTables(conn);
+            System.out.println("Filled tables!");
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
+            System.exit(-1);
         } catch (SQLException e) {
             e.printStackTrace();
+            System.exit(-1);
         }
-        Statement stmt = null;
-        try {
-            stmt = conn.createStatement();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        fillTables(conn);
+
+
 
 
         // Setup DSLContext
@@ -37,15 +45,16 @@ public class IgniteCreateTables {
         DSLContext context = DSL.using(conn, settings);
 
         // Parse the test query
-        String query = "Select * from Ill where Diagnosis = 'Asthma'";
+        String query = "Select b.ID, b.Name, b.Address from Ill a, Info b where a.Diagnosis = 'Asthma' and " +
+                "a.PatientID = b.ID";
         Parser parser = context.parser();
         Query q = parser.parseQuery(query);
 
         try {
             ResultSet res = stmt.executeQuery(q.getSQL());
             while (res.next()) {
-                System.out.format("PatientID: %d, Diagnosis: %s\n", res.getInt("PatientID"),
-                        res.getString("Diagnosis"));
+                System.out.format("ID: %d, Name: %s, Address: %s\n", res.getInt("ID"),
+                        res.getString("Name"), res.getString("Address"));
 
             }
 
@@ -63,39 +72,59 @@ public class IgniteCreateTables {
 
 
 
-    private static void fillTables(Connection conn) {
+    private static void fillTables(Connection conn) throws SQLException {
         // Fill tables
         // TODO automate table filling with randomized IDs 'n shit
         String insertStmt = "INSERT INTO ILL (PatientID, Diagnosis) VALUES (?, ?)";
         PreparedStatement prep = null;
-        try {
-            prep = conn.prepareStatement(insertStmt);
-            prep.setInt(1, 8457);
-            prep.setString(2, "Cough");
-            prep.execute();
 
-            prep.setInt(1, 2784);
-            prep.setString(2, "Flu");
-            prep.execute();
+        prep = conn.prepareStatement(insertStmt);
+        prep.setInt(1, 8457);
+        prep.setString(2, "Cough");
+        prep.execute();
 
-            prep.setInt(1, 2784);
-            prep.setString(2, "Asthma");
-            prep.execute();
+        prep.setInt(1, 2784);
+        prep.setString(2, "Flu");
+        prep.execute();
 
-            prep.setInt(1, 2784);
-            prep.setString(2, "brokenLeg");
-            prep.execute();
+        prep.setInt(1, 2784);
+        prep.setString(2, "Asthma");
+        prep.execute();
 
-            prep.setInt(1, 8765);
-            prep.setString(2, "Asthma");
-            prep.execute();
+        prep.setInt(1, 2784);
+        prep.setString(2, "brokenLeg");
+        prep.execute();
 
-            prep.setInt(1, 1055);
-            prep.setString(2, "brokenArm");
-            prep.execute();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
+        prep.setInt(1, 8765);
+        prep.setString(2, "Asthma");
+        prep.execute();
+
+        prep.setInt(1, 1055);
+        prep.setString(2, "brokenArm");
+        prep.execute();
+
+
+        insertStmt = "INSERT INTO INFO (ID, Name, Address) VALUES (?, ?, ?)";
+        prep = conn.prepareStatement(insertStmt);
+        prep.setInt(1, 8457);
+        prep.setString(2, "Mary Miller");
+        prep.setString(3, "New Street 5, 12345 Newtown");
+        prep.execute();
+
+        prep.setInt(1, 2784);
+        prep.setString(2, "Adam Smith");
+        prep.setString(3, "Main Street 13, 12344 Oldtown");
+        prep.execute();
+
+        prep.setInt(1, 8765);
+        prep.setString(2, "Bert Miller");
+        prep.setString(3, "New Street 5, 12345 Newtown");
+        prep.execute();
+
+        prep.setInt(1, 1055);
+        prep.setString(2, "Johnny Cage");
+        prep.setString(3, "Highway 1, 12278 Hightown");
+        prep.execute();
     }
 
     @Nullable
@@ -106,11 +135,15 @@ public class IgniteCreateTables {
         Statement stmt = conn.createStatement();
 
         // DROP tables
-        String dropStmt = "DROP TABLE IF EXISTS ILL; DROP TABLE IF EXISTS INFO; DROP TABLE IF EXISTS bnla;";
+        String dropStmt = "DROP TABLE IF EXISTS ILL; DROP TABLE IF EXISTS INFO;";
         stmt.executeUpdate(dropStmt);
 
-        String createStmt = "CREATE TABLE ILL (PatientID INT, Diagnosis VARCHAR, NonPK TINYINT, PRIMARY KEY " +
-                "(PatientID, Diagnosis)) WITH \"backups=0\"";
+        String createStmt = "CREATE TABLE ILL (PatientID INT, MeshID VARCHAR, Diagnosis VARCHAR, PRIMARY KEY " +
+                "(PatientID, Diagnosis)) WITH \"backups=0,affinityKey=Diagnosis\"";
+        stmt.executeUpdate(createStmt);
+
+        createStmt = "CREATE TABLE INFO (ID INT PRIMARY KEY, Name VARCHAR, Address VARCHAR) WITH \"backups=0," +
+                "affinityKey=ID\"";
         stmt.executeUpdate(createStmt);
 
     }
