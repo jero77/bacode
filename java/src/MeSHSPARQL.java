@@ -16,8 +16,8 @@ public class MeSHSPARQL {
         // Setup filtered OutputStream to CSV-File
         FileOutputStream fileos = null;
         try {
-            String separ = File.pathSeparator;
-            String outputFile = "out" + separ + "csv" + separ + " mesh.csv";
+            String separ = File.separator;
+            String outputFile = "out" + separ + "csv" + separ + "mesh.csv";
             fileos = new FileOutputStream(outputFile);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
