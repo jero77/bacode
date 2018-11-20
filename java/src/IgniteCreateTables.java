@@ -37,7 +37,6 @@ public class IgniteCreateTables {
 
 
 
-
         // Setup DSLContext
         final Settings settings = new Settings();
         settings.withRenderFormatted(true);
@@ -139,7 +138,7 @@ public class IgniteCreateTables {
         stmt.executeUpdate(dropStmt);
 
         String createStmt = "CREATE TABLE ILL (PatientID INT, MeshID VARCHAR, Diagnosis VARCHAR, PRIMARY KEY " +
-                "(PatientID, Diagnosis)) WITH \"backups=0,affinityKey=Diagnosis\"";
+                "(PatientID, MeshID)) WITH \"backups=0,affinityKey=Diagnosis\"";
         stmt.executeUpdate(createStmt);
 
         createStmt = "CREATE TABLE INFO (ID INT PRIMARY KEY, Name VARCHAR, Address VARCHAR) WITH \"backups=0," +
@@ -154,7 +153,8 @@ public class IgniteCreateTables {
         Class.forName("org.apache.ignite.IgniteJdbcThinDriver");
 
         // Return connection to the cluster (Port 10800 default for JDBC client)
-        return DriverManager.getConnection("jdbc:ignite:thin://127.0.0.1:10800;distributedJoins=true");
+        return DriverManager.getConnection("jdbc:ignite:thin://127.0.0.1:10800;distributedJoins=true;" +
+                "collocated=true");
     }
 
 }
