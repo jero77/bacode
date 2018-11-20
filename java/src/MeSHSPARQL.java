@@ -4,6 +4,7 @@ import org.apache.jena.query.QuerySolution;
 import org.apache.jena.query.ResultSet;
 import org.apache.jena.sparql.engine.http.QueryEngineHTTP;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -15,7 +16,9 @@ public class MeSHSPARQL {
         // Setup filtered OutputStream to CSV-File
         FileOutputStream fileos = null;
         try {
-            fileos = new FileOutputStream("out\\csv\\mesh.csv");
+            String separ = File.pathSeparator;
+            String outputFile = "out" + separ + "csv" + separ + " mesh.csv";
+            fileos = new FileOutputStream(outputFile);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
             System.exit(-1);
