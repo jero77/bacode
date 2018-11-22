@@ -9,7 +9,7 @@ import org.jooq.impl.DSL;
 
 import java.sql.*;
 
-public class IgniteCreateTables {
+public class IgniteCreateTablesSQL {
 
     public static void main(String[] args) {
 
