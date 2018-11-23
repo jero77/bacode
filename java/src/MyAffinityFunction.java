@@ -2,9 +2,7 @@ import org.apache.ignite.cache.affinity.AffinityFunction;
 import org.apache.ignite.cache.affinity.AffinityFunctionContext;
 import org.apache.ignite.cluster.ClusterNode;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 
 public class MyAffinityFunction implements AffinityFunction {
@@ -136,12 +134,46 @@ public class MyAffinityFunction implements AffinityFunction {
      * This method calculates the clustering of the active domain of the relaxation attribute in a table.
      * All the values of the active domain of the relaxation attribute (column) are assigned to a cluster
      * (Note: do not mix up with the cluster of nodes storing data! Here clusters are the partitions). The
-     * resulting assignment is a list of clusters. For details see {@link }
+     * resulting assignment is a list of clusters. For details see {@link Cluster}
      * @param activeDomain The active domain of the relaxation attribute
      * @param alpha The similarity threshold
      */
-    private void clustering(List<String> activeDomain, double alpha) {
+    private ArrayList<Cluster<String>> clustering(List<String> activeDomain, double alpha) {
+        if (activeDomain.isEmpty())
+            throw new IllegalArgumentException("The list containing the active domain is empty.");
 
+
+        // Initialize the first cluster with all values from the active domain (except head element)
+        ArrayList<Cluster<String>> clusters = new ArrayList<>();
+        String headElement = activeDomain.remove(0);
+        Cluster<String> c = new Cluster<String>(headElement, new HashSet<String>(activeDomain));
+        clusters.add(0, c);
+
+        // TODO sim_min, similarity
+
+        int i = 0;
+        /*
+         while sim_min < alpha
+            for (int j = 0; j <= i; j++) {
+                set = {b | b aus Cluster_j; b != head_j; sim(b, head_j) == sim_min}
+            }
+            String nextHead = set.get(0);
+
+            for (int j = 0; j <= i; j++) {
+                set = {b | b aus Cluster_j; b != head_j; sim(b, head_j) <= sim(b, nextHead)}
+            }
+            i = i + 1;
+            c = new Cluster<String>(nextHead, set)
+            clusters.add(i, c);
+
+            for (int j = 0; j <= i; j++) {
+                sim_min = min{sim(d, head_j) | d aus Cluster_j; d != head_j}
+            }
+         end while
+          */
+
+
+        return clusters;
     }
 
 }
