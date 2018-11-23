@@ -17,7 +17,7 @@ public class MyAffinityFunction implements AffinityFunction {
 
 
     /**
-     * Initializes affinity with specified number of partitions (this are only primary partitions,
+     * Initializes affinity with specified number of partitions (this are only primary partitions
      * as backups are not considered here).
      * @param parts
      */
