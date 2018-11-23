@@ -7,17 +7,21 @@ import org.apache.ignite.cache.affinity.AffinityKeyMapped;
 public class IllKey {
 
     /**
-     * The ID of a person. PersonID will be used for affinity collocation of the Ill-Cache. This will cause
+     * The ID of a person. PersonID will be used for affinity collocation of the Info-Cache. This will cause
      * an Info-object to be stored at the same partition together with the corresponding Ill-object.
-     * {@link AffinityKeyMapped}
      */
-    @AffinityKeyMapped
     private int personID;
 
     /**
-     * The disease this person has/had.
+     * The disease this person has/had. This term will be used for the clustering-based fragmentation.
+     * Affinity collocation based on this attribute (relaxation attribute) is used to obtain a mapping
+     * from a disease term to a partition (to a node)
+     * {@link AffinityKeyMapped}
+     * {@link MyAffinityFunction}
      */
+    @AffinityKeyMapped
     private String disease;
+
 
 //##################### Constructor #########################
 

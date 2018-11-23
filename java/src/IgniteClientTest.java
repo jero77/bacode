@@ -29,7 +29,8 @@ public class IgniteClientTest {
         cacheConfigIll.setName("ill")
                 .setBackups(0)
                 .setCacheMode(CacheMode.PARTITIONED)
-                .setTypes(IllKey.class, Ill.class);
+                .setTypes(IllKey.class, Ill.class)
+                .setAffinity(new MyAffinityFunction(2));    // TODO Test affinity function
 
         CacheConfiguration cacheConfigInfo = new CacheConfiguration();
         cacheConfigInfo.setName("info")

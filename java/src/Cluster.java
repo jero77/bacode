@@ -60,13 +60,7 @@ public class Cluster<T> {
 
 //##################### Modify adom-List (Getter/Setter) ######################
 
-
-    public boolean addAdomValue(T value) {
-        return adom.add(value);
-    }
-
-
-    public boolean removeAdomValue(Collection<T> remove) {
-        return adom.removeAll(remove);
+    public Set<T> getAdom() {
+        return adom;
     }
 }
