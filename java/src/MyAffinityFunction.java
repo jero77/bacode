@@ -336,9 +336,7 @@ public class MyAffinityFunction<T> implements AffinityFunction {
         // Test clustering
         ArrayList<Cluster<String>> clusters = maf.clusters;
         for (Cluster<String> c : clusters) {
-            System.out.println("Head of cluster: " + c.getHead());
-            for (String s : c.getAdom())
-                System.out.println("\tTerm: " + s);
+            System.out.println(c);
         }
     }
 

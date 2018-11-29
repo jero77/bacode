@@ -63,4 +63,15 @@ public class Cluster<T> {
     public Set<T> getAdom() {
         return adom;
     }
+
+
+//##################### Overwritten Methods #########################
+
+    @Override
+    public String toString() {
+        String s =  "Head of the cluster: " + this.head;
+        for (T t : this.adom)
+            s += "\n\tTerm: " + t;
+        return s;
+    }
 }
