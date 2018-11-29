@@ -1,14 +1,18 @@
 import org.apache.ignite.cache.affinity.AffinityKeyMapped;
+import org.apache.ignite.cache.query.annotations.QuerySqlField;
+
+import java.io.Serializable;
 
 /**
  * This is a compound key containing a person's id and the string for the disease's name.
  * Used to cache an instance of the Ill-class {@link Ill}
  */
-public class IllKey {
+public class IllKey implements Serializable {
 
     /**
      * The ID of a person.
      */
+    @QuerySqlField (index = true)
     private Integer personID;
 
     /**
@@ -19,6 +23,7 @@ public class IllKey {
      * {@link MyAffinityFunction}
      */
     @AffinityKeyMapped
+    @QuerySqlField
     private String disease;
 
 

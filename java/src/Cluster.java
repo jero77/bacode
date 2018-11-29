@@ -1,3 +1,4 @@
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -9,10 +10,10 @@ import java.util.Set;
  * relaxation attribute.
  * A cluster is identified by it's head element and for all the other values belonging to this cluster there
  * is a similarity value to the head element defined and this value is greater or equal to the in the
- * clustering-procedure ({@link MyAffinityFunction#clustering(List, double)} defined similarity threshold.
+ * clustering-procedure ({@link MyAffinityFunction#clustering(List)} defined similarity threshold.
  * The parameter type T is the domain of the relaxation attribute, e.g. a String or an Integer.
  */
-public class Cluster<T> {
+public class Cluster<T> implements Serializable {
 
     /**
      * Head element of the cluster
@@ -67,11 +68,31 @@ public class Cluster<T> {
 
 //##################### Overwritten Methods #########################
 
+    /**
+     * Simple toString method
+     * @return String representation of the cluster
+     */
     @Override
     public String toString() {
         String s =  "Head of the cluster: " + this.head;
         for (T t : this.adom)
             s += "\n\tTerm: " + t;
         return s;
+    }
+
+
+    /**
+     * Compares a cluster to another object. Two clusters are equal if they are identified by the same head element.
+     * @param obj
+     * @return
+     */
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof Cluster))
+            return false;
+
+        // Compare head elements
+        Cluster other = (Cluster) obj;
+        return this.head.equals(other.head);
     }
 }

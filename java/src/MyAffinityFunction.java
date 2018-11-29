@@ -1,7 +1,9 @@
 import org.apache.ignite.cache.affinity.AffinityFunction;
 import org.apache.ignite.cache.affinity.AffinityFunctionContext;
 import org.apache.ignite.cluster.ClusterNode;
+import org.jetbrains.annotations.NotNull;
 
+import java.io.Serializable;
 import java.util.*;
 
 /**
@@ -9,20 +11,32 @@ import java.util.*;
  * It uses a clustering-based fragmentation on a relaxation attribute (which is of type {@code T}) to obtain a mapping
  * of the horizontal fragmentation of a table to partitions and to a {@link ClusterNode} of the
  * {@link org.apache.ignite.IgniteCluster}.
+ *
  * @param <T> The domain of the relaxation attribute (e.g. String or Integer)
  */
-public class MyAffinityFunction<T> implements AffinityFunction {
+public class MyAffinityFunction<T> implements AffinityFunction, Serializable {
 
     /**
      * Maximum partition count
      */
     public static final int DFLT_PARTITION_COUNT = 1024;
 
+
     /**
      * Number of partitions (should be same for
      */
     private int parts;
 
+
+    /**
+     * Default value for clustering algorithm threshold.
+     */
+    private static final double DFLT_ALPHA = 0.2;
+
+    /**
+     * Similarity threshold for clustering algorithm and affinity key mapping.
+     */
+    private final double alpha;
 
     /**
      * HashMap for the pairwise similarities of predefined MeSH terms (active domain here)
@@ -35,14 +49,24 @@ public class MyAffinityFunction<T> implements AffinityFunction {
     private T[] terms;
 
     /**
-     * The clusters obtained from the clustering algorithm (will be initialized in constructor).
-     * TODO maybe Cluster<?> more generic
+     * The clusters obtained from the clustering algorithm (will be initialized in constructor). Also provides a
+     * mapping of each cluster to a partition with abusing the index of the cluster in this ArrayList.
      */
     private ArrayList<Cluster<T>> clusters;
 
 
 //##################### Constructors ######################
 
+    /**
+     * Constructor using default value for alpha.
+     * For details see {@link MyAffinityFunction#MyAffinityFunction(int, double, Object[])}.
+     *
+     * @param parts Number of partitions
+     * @param terms Array containing active domain of relaxation attribute
+     */
+    public MyAffinityFunction(int parts, T[] terms) {
+        this(parts, DFLT_ALPHA, terms);
+    }
 
     /**
      * Initializes affinity with specified number of partitions (this are only primary partitions
@@ -51,10 +75,11 @@ public class MyAffinityFunction<T> implements AffinityFunction {
      *
      * @param parts Number of partitions
      * @param alpha Threshold for clustering algorithm
-     * @param
+     * @param terms Array containing active domain of relaxation attribute
      */
     public MyAffinityFunction(int parts, double alpha, T[] terms) {
         this.parts = parts;
+        this.alpha = alpha;
         this.terms = terms;
 
         // Init similarities HashMap
@@ -72,13 +97,19 @@ public class MyAffinityFunction<T> implements AffinityFunction {
         similarities.put("C0021400+C0041601", 0.1429);   //0.1429<>Influenza(C0021400)<>Ulna Fracture(C0041601)
         similarities.put("C0040185+C0041601", 0.3333);   //.3333<>Tibial Fracture(C0040185)<>Ulna Fracture(C0041601)
 
-        // Clustering
-        // TODO read terms from csv instead as predefined String array
+        // Calculate clustering (index of cluster implies mapping of cluster to partition)
+        // TODO read terms from csv instead of as predefined String array
         List<T> termList = new LinkedList<T>();
         for (T term : terms)
             termList.add(term);
-        clusters = clustering(termList, alpha);
+        clusters = clustering(termList);
+
+        // Debug
+        System.out.println("Clustering:");
+        for (Cluster<T> c : clusters)
+            System.out.println(c);
     }
+
 
 //##################### Overwritten Methods ######################
 
@@ -115,23 +146,41 @@ public class MyAffinityFunction<T> implements AffinityFunction {
             throw new IllegalArgumentException("The key passed to the MyAffinityFunction's method " +
                     "partition(Object key) was null.");
 
-        // Assume we have the affinity key of the Ill-Cache here which is a String describing a disease
-        // TODO adapt to ghenerification
-        String disease = null;
-        if (key instanceof String)
-            disease = (String) key;
-        System.out.println(disease);
+        // The type of the key should be the generic attribute T (but 'key instanceof T' is forbidden)
+        T t = null;
+        try {
+            t = (T) key;
+        } catch (ClassCastException e) {
+            e.printStackTrace();
+        }
+        System.out.println("partition(" + t + ")");  // Debug
 
-        // TODO map key to partition (fragment) according to the clustering-based fragmentation
-        // For sake of simplicity: Respiratory --> partition 0, Fracture --> partition 1
-        int partition = -1;
-        if (disease.matches("("+ terms[0] +")|(" + terms[1] + ")|(" + terms[2] + ")"))
-            partition = 0;
-        else
-            if (disease.matches("("+ terms[3] +")|(" + terms[4] + ")"))
-                partition = 1;
 
-        return partition;
+        // Identify the cluster to which this t belongs
+        // First check if t is equal to the head of i-th cluster (store heads during check for further identification)
+        T[] head = (T[]) new Object[clusters.size()];
+        for (int i = 0; i < clusters.size(); i++) {
+            head[i] = clusters.get(i).getHead();
+            if (t.equals(head[i])) {
+                System.out.println("return partition=" + i);        // Debug
+                return i;
+            }
+        }
+
+        // No head matched -> calculate similarity of t to each of the heads and find maximum similarity
+        double max = -1;
+        int argMax = -1;
+        for (int i = 0; i < head.length; i++) {
+            double sim = similarity(t, head[i]);
+            if (max < sim) {
+                max = sim;
+                argMax = i;
+            }
+        }
+
+        // Debug
+        System.out.println("return partition=" + argMax);
+        return argMax;
     }
 
 
@@ -155,11 +204,12 @@ public class MyAffinityFunction<T> implements AffinityFunction {
 
         // Get all the nodes in the cluster
         List<ClusterNode> allNodes = affCtx.currentTopologySnapshot();
-
+        System.out.println("assignPartitions: parts=" + parts + ", allNodes=" + Arrays.toString(allNodes.toArray()));   //Debug
         // Assign each partition to a node (no replication)
         for (int i = 0; i < this.parts; i++) {
             List<ClusterNode> assignedNodes = this.assignPartition(i, allNodes);
             result.add(i, assignedNodes);
+            System.out.println("Assigned partition " + i + " to node " + assignedNodes.get(0).id());    // Debug
         }
 
         return result;
@@ -168,14 +218,7 @@ public class MyAffinityFunction<T> implements AffinityFunction {
 
 //##################### Getter & Setter ######################
 
-    /**
-     * Set the number of partitions.
-     *
-     * @param parts Number of partitions
-     */
-    public void setParts(int parts) {
-        this.parts = parts;
-    }
+
 
 
 //##################### Clustering-based Fragmentation (Partition-Mappings, Cluster-Algorithm)  ######################
@@ -188,13 +231,17 @@ public class MyAffinityFunction<T> implements AffinityFunction {
      * e.g. primary and backup nodes according to the clustering-based fragmentation.
      *
      * @param partition The number of the partition to assign to a node
-     * @param allNodes  A list of all nodes in the cluster, e.g. {@see AffinityFunctionContext#currentTopologySnapshot()}
+     * @param allNodes  A list of all nodes in the cluster, can be provided by e.g.
+     *                  {@see AffinityFunctionContext#currentTopologySnapshot()}
      * @return List of cluster nodes (currently containing only one node) to which the partition is mapped
      */
     private List<ClusterNode> assignPartition(int partition, List<ClusterNode> allNodes) {
         // TODO Assign partition i to the node it belongs to according to the clustering-based fragmentation
+        // TODO or according to the bin packing problem?!?!
         // For sake of simplicity:
+        // i-th partition is assigned to i-th node (assuming i partitions and i nodes)
         // partition 0 with respiratory diseases --> first node, partitions 1 with fractures --> second node
+        System.out.println("Assigning partition " + partition + " to node " + allNodes.get(partition).id());
         List<ClusterNode> result = new ArrayList<ClusterNode>();
         result.add(allNodes.get(partition));
         return result;
@@ -205,10 +252,10 @@ public class MyAffinityFunction<T> implements AffinityFunction {
      * All the values of the active domain of the relaxation attribute (column) are assigned to a cluster
      * (Note: do not mix up with the cluster of nodes storing data! Here clusters are the partitions). The
      * resulting assignment is a list of clusters. For details see {@link Cluster}
-     *  @param activeDomain The active domain of the relaxation attribute
-     * @param alpha        The similarity threshold
+     *
+     * @param activeDomain The active domain of the relaxation attribute
      */
-    private ArrayList<Cluster<T>> clustering(List<T> activeDomain, double alpha) {
+    private ArrayList<Cluster<T>> clustering(@NotNull List<T> activeDomain) {
         if (activeDomain.isEmpty())
             throw new IllegalArgumentException("The list containing the active domain is empty.");
 
@@ -219,6 +266,7 @@ public class MyAffinityFunction<T> implements AffinityFunction {
         Cluster<T> c = new Cluster<T>(headElement, new HashSet<T>(activeDomain));
         clusters.add(0, c);
 
+        // Initial minimal similarity for next head
         double sim_min = 1.0;
         for (T term : c.getAdom()) {       // note: adom does not contain head!
             double sim = similarity(term, headElement);
@@ -231,7 +279,7 @@ public class MyAffinityFunction<T> implements AffinityFunction {
         int i = 0;
         while (sim_min < alpha) {
 
-            // Get the element with the smallest similarity to any cluster head (argmin)
+            // Get the element with the smallest similarity to any cluster head (argmin of similarity)
             T nextHead = null;
             for (int j = 0; j <= i; j++) {
                 c = clusters.get(j);
@@ -290,7 +338,6 @@ public class MyAffinityFunction<T> implements AffinityFunction {
 
         return clusters;
     }
-
 
 
     private double similarity(T term1, T term2) {

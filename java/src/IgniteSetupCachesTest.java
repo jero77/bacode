@@ -3,6 +3,9 @@ import org.apache.ignite.IgniteCache;
 import org.apache.ignite.Ignition;
 import org.apache.ignite.cache.CacheMode;
 import org.apache.ignite.cache.affinity.Affinity;
+import org.apache.ignite.cache.query.FieldsQueryCursor;
+import org.apache.ignite.cache.query.QueryCursor;
+import org.apache.ignite.cache.query.SqlFieldsQuery;
 import org.apache.ignite.client.ClientException;
 import org.apache.ignite.cluster.ClusterNode;
 import org.apache.ignite.configuration.CacheConfiguration;
@@ -11,12 +14,9 @@ import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
 import org.apache.ignite.spi.discovery.tcp.ipfinder.vm.TcpDiscoveryVmIpFinder;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
-public class IgniteClientTest {
+public class IgniteSetupCachesTest {
 
 
     public static void main(String[] args) {
@@ -28,17 +28,19 @@ public class IgniteClientTest {
         // Cache configurations
         String[] terms = {"Asthma", "Cough", "Influenza", "Ulna Fracture", "Tibial Fracture"};      // active domain
         CacheConfiguration cacheConfigIll = new CacheConfiguration();
+        MyAffinityFunction<String> myAffinityFunction = new MyAffinityFunction<String>(2, 0.2, terms);
         cacheConfigIll.setName("ill")
                 .setBackups(0)
                 .setCacheMode(CacheMode.PARTITIONED)
-                .setTypes(IllKey.class, Ill.class)
-                .setAffinity(new MyAffinityFunction<String>(2, 0.2, terms)); // TODO Test affinity function
+                .setIndexedTypes(IllKey.class, Ill.class)
+                .setAffinity(myAffinityFunction);
 
         CacheConfiguration cacheConfigInfo = new CacheConfiguration();
         cacheConfigInfo.setName("info")
                 .setBackups(0)
                 .setCacheMode(CacheMode.PARTITIONED)
-                .setTypes(Integer.class, Info.class);
+                .setIndexedTypes(Integer.class, Info.class);
+
 
         // Discovery
         TcpDiscoverySpi spi = new TcpDiscoverySpi();
@@ -50,7 +52,8 @@ public class IgniteClientTest {
         IgniteConfiguration cfg = new IgniteConfiguration();
         cfg.setClientMode(true)
             .setDiscoverySpi(spi)
-            .setCacheConfiguration(cacheConfigIll, cacheConfigInfo);
+            .setCacheConfiguration(cacheConfigIll, cacheConfigInfo)
+            .setPeerClassLoadingEnabled(true);
 
 
         // Start client that connects to the cluster
@@ -64,32 +67,40 @@ public class IgniteClientTest {
             IgniteCache<Integer, Info> cacheInfo = ignite.getOrCreateCache(cacheConfigInfo);
             System.out.format("Created/Got cache [%s]!\n", cacheConfigInfo.getName());
 
-            // put some test data
             // TODO generate random data
+
+            // put some test data
+            cacheIll.clear();
+            cacheInfo.clear();
             for (int i = 0; i < 5; i++) {
                 // Some info
                 Info info = new Info(i);
                 cacheInfo.put(info.getId(), info);
+                System.out.println("Added: " + info);
 
                 // Some disease
                 String disease = terms[(new Random()).nextInt(terms.length)];
                 IllKey illKey = new IllKey(i, disease);
                 Ill ill = new Ill(illKey, "diseaseID"+(112*i));
                 cacheIll.put(illKey, ill);
+                System.out.println("Added: " + ill + "\n");
             }
 
 
-            // Get affinities for both caches
-//            Affinity<IllKey> affIll = ignite.affinity("ill");
-//            Affinity<Integer> affInfo = ignite.affinity("info");
+            // Some test query
+            // TODO explain query failure --> maybe 2nd affinity function is needed for derived fragmentation?
+            // TODO derived fragmentation
+            // Failure: ignite maps info-objects randomly or maybe equally distributed but not collocated (yet)
+            String query = "Select * from ill, \"info\".info where ill.personid=info.id";
+            QueryCursor<List<?>> cursor = cacheIll.query(new SqlFieldsQuery(query));
+            System.out.println("Query-result:");
+            for (List<?> row : cursor) {
+                for (int i = 0; i < row.size(); i++) {
+                    System.out.print(((FieldsQueryCursor<List<?>>) cursor).getFieldName(i) + ": " + row.get(i) + ", ");
+                }
+                System.out.println();
+            }
 
-            // Get the affinity key mappings:
-//            IllKey key = cacheIll.;
-//            ClusterNode node = affIll.mapKeyToNode(key);
-////            System.out.println("Addresses: " + Arrays.toString(node.addresses().toArray()));
-//            System.out.println("NodeID: " + node.id() + ", Addresses: " + Arrays.toString(node.addresses().toArray()));
-//            System.out.println("Partition ID: " + affIll.partition(key));
-//            System.out.println("Number of partitions: " + affIll.partitions());
 
         } catch (ClientException e) {
             e.printStackTrace();

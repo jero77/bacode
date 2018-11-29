@@ -1,15 +1,22 @@
 import org.apache.ignite.cache.affinity.AffinityKeyMapped;
+import org.apache.ignite.cache.query.annotations.QuerySqlField;
 
-public class Info {
+import java.io.Serializable;
+
+public class Info implements Serializable {
 
     /**
      * The ID (key) of a person. This key will be used for affinity collocation of the Ill-Cache and this will cause
-     * an Info-objdect to be store at the same partition together with the corresponding Ill-object.
+     * an Info-object to be stored at the same partition together with the corresponding Ill-object.
     */
     @AffinityKeyMapped
+    @QuerySqlField (index = true)
     private Integer id;
 
+    @QuerySqlField
     private String name;
+
+    @QuerySqlField
     private String address;
 
 

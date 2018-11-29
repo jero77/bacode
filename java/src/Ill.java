@@ -1,6 +1,9 @@
 import org.apache.ignite.cache.affinity.AffinityKeyMapped;
+import org.apache.ignite.cache.query.annotations.QuerySqlField;
 
-public class Ill {
+import java.io.Serializable;
+
+public class Ill implements Serializable {
 
     /**
      * Key which will be used to cache an Ill-Object {@link IllKey}.
@@ -10,7 +13,9 @@ public class Ill {
 
     /**
      * This is the id of the descriptor in MeSH
+     * TODO or use ConceptUniqueIdentifiers here
       */
+    @QuerySqlField
     private String meshID;;
 
     // Some other attributes ....

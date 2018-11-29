@@ -1,14 +1,19 @@
 import org.apache.ignite.Ignite;
+import org.apache.ignite.IgniteCache;
 import org.apache.ignite.Ignition;
+import org.apache.ignite.cache.query.QueryCursor;
+import org.apache.ignite.cache.query.SqlFieldsQuery;
+import org.apache.ignite.configuration.ClientConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
-import org.apache.ignite.spi.discovery.DiscoverySpi;
 import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
-import org.apache.ignite.spi.discovery.tcp.ipfinder.multicast.TcpDiscoveryMulticastIpFinder;
 import org.apache.ignite.spi.discovery.tcp.ipfinder.vm.TcpDiscoveryVmIpFinder;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
-public class IgniteStartNode {
+public class IgniteQueryCachesTest {
+
 
     public static void main(String[] args) {
 
@@ -18,13 +23,19 @@ public class IgniteStartNode {
         ipFinder.setAddresses(Arrays.asList("127.0.0.1:47500..47509"));
         spi.setIpFinder(ipFinder);
 
-        // Configuration
+        // Ignite Configuration
         IgniteConfiguration cfg = new IgniteConfiguration();
-        cfg.setDiscoverySpi(spi)
-                .setClientMode(false)
+        cfg.setClientMode(true)
+                .setDiscoverySpi(spi)
                 .setPeerClassLoadingEnabled(true);
 
-        // Start the node
-        Ignition.start(cfg);
+        try (Ignite ignite = Ignition.start(cfg)) {
+            // create or get cache (key-value store)
+            IgniteCache<IllKey, Ill> cacheIll = ignite.getOrCreateCache("ill");
+            System.out.format("Created/Got cache [%s]!\n", cacheIll.getName());
+
+
+        }
     }
+
 }
