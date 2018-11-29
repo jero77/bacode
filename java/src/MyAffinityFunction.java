@@ -30,9 +30,9 @@ public class MyAffinityFunction<T> implements AffinityFunction {
     private HashMap<String, Double> similarities;
 
     /**
-     * Predefined MeSH terms
+     * Array of all the terms occuring in the active domain of the relaxation attribute
      */
-    private String[] terms = {"Asthma", "Cough", "Influenza", "Ulna Fracture", "Tibial Fracture"};
+    private T[] terms;
 
     /**
      * The clusters obtained from the clustering algorithm (will be initialized in constructor).
@@ -51,9 +51,11 @@ public class MyAffinityFunction<T> implements AffinityFunction {
      *
      * @param parts Number of partitions
      * @param alpha Threshold for clustering algorithm
+     * @param
      */
-    public MyAffinityFunction(int parts, double alpha) {
+    public MyAffinityFunction(int parts, double alpha, T[] terms) {
         this.parts = parts;
+        this.terms = terms;
 
         // Init similarities HashMap
         // TODO read similarities from csv (prepare csv)
@@ -72,9 +74,9 @@ public class MyAffinityFunction<T> implements AffinityFunction {
 
         // Clustering
         // TODO read terms from csv instead as predefined String array
-        List<String> termList = new LinkedList<String>();
-        for (String s : this.terms)
-            termList.add(s);
+        List<T> termList = new LinkedList<T>();
+        for (T term : terms)
+            termList.add(term);
         clusters = clustering(termList, alpha);
     }
 
@@ -290,7 +292,7 @@ public class MyAffinityFunction<T> implements AffinityFunction {
     }
 
 
-    
+
     private double similarity(T term1, T term2) {
 
         // TODO ??? ??? ???
@@ -326,15 +328,17 @@ public class MyAffinityFunction<T> implements AffinityFunction {
      */
     public static void main(String[] args) {
 
+        String[] terms = {"Asthma", "Cough", "Influenza", "Ulna Fracture", "Tibial Fracture"};
+
         // Prepare clustering test
-        MyAffinityFunction maf = new MyAffinityFunction(2, 0.2);
+        MyAffinityFunction<String> maf = new MyAffinityFunction<String>(2, 0.2, terms);
 
         // Test clustering
         ArrayList<Cluster<String>> clusters = maf.clusters;
         for (Cluster<String> c : clusters) {
-            System.out.println("Head: " + c.getHead());
+            System.out.println("Head of cluster: " + c.getHead());
             for (String s : c.getAdom())
-                System.out.println("Term: " + s);
+                System.out.println("\tTerm: " + s);
         }
     }
 

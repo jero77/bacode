@@ -26,12 +26,13 @@ public class IgniteClientTest {
         ClientConfiguration cliConfig = new ClientConfiguration().setAddresses(ADDRESSES);
 
         // Cache configurations
+        String[] terms = {"Asthma", "Cough", "Influenza", "Ulna Fracture", "Tibial Fracture"};      // active domain
         CacheConfiguration cacheConfigIll = new CacheConfiguration();
         cacheConfigIll.setName("ill")
                 .setBackups(0)
                 .setCacheMode(CacheMode.PARTITIONED)
                 .setTypes(IllKey.class, Ill.class)
-                .setAffinity(new MyAffinityFunction(2));    // TODO Test affinity function
+                .setAffinity(new MyAffinityFunction<String>(2, 0.2, terms)); // TODO Test affinity function
 
         CacheConfiguration cacheConfigInfo = new CacheConfiguration();
         cacheConfigInfo.setName("info")
@@ -64,7 +65,6 @@ public class IgniteClientTest {
             System.out.format("Created/Got cache [%s]!\n", cacheConfigInfo.getName());
 
             // put some test data
-            String[] terms = {"Asthma", "Cough", "Influenza", "Ulna Fracture", "Tibial Fracture"};
             // TODO generate random data
             for (int i = 0; i < 5; i++) {
                 // Some info
