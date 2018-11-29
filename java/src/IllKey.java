@@ -7,10 +7,9 @@ import org.apache.ignite.cache.affinity.AffinityKeyMapped;
 public class IllKey {
 
     /**
-     * The ID of a person. PersonID will be used for affinity collocation of the Info-Cache. This will cause
-     * an Info-object to be stored at the same partition together with the corresponding Ill-object.
+     * The ID of a person.
      */
-    private int personID;
+    private Integer personID;
 
     /**
      * The disease this person has/had. This term will be used for the clustering-based fragmentation.
@@ -37,11 +36,11 @@ public class IllKey {
 
 //##################### Getter & Setter #########################
 
-    public int getPersonID() {
+    public Integer getPersonID() {
         return personID;
     }
 
-    public void setPersonID(int personID) {
+    public void setPersonID(Integer personID) {
         this.personID = personID;
     }
 

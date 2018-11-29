@@ -1,8 +1,11 @@
+import org.apache.ignite.cache.affinity.AffinityKeyMapped;
+
 public class Ill {
 
     /**
      * Key which will be used to cache an Ill-Object {@link IllKey}.
       */
+    //@AffinityKeyMapped
     private IllKey key;
 
     /**

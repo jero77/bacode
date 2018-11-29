@@ -2,10 +2,12 @@ import org.apache.ignite.cache.affinity.AffinityKeyMapped;
 
 public class Info {
 
-    // Person ID will be used for affinity with the Ill-Cache
-    // --> store tuple describing a person's name and address together with tuples describing his illnesses
-    // @AffinityKeyMapped
-    private InfoKey key;
+    /**
+     * The ID (key) of a person. This key will be used for affinity collocation of the Ill-Cache and this will cause
+     * an Info-objdect to be store at the same partition together with the corresponding Ill-object.
+    */
+    @AffinityKeyMapped
+    private Integer id;
 
     private String name;
     private String address;
@@ -14,29 +16,29 @@ public class Info {
 
 //#################### Constructors ####################
 
-    public Info(InfoKey key, String name, String address) {
-        this.key = key;
+    public Info(int id, String name, String address) {
+        this.id = id;
         this.name = name;
         this.address = address;
     }
 
 
-    public Info(InfoKey key) {
-        this.key = key;
-        this.name = "Name of " + key;
-        this.address = "Address of " + key;
+    public Info(int id) {
+        this.id = id;
+        this.name = "Name of " + id;
+        this.address = "Address of " + id;
     }
 
 
 //#################### Getter & Setter ####################
 
 
-    public InfoKey getKey() {
-        return key;
+    public Integer getId() {
+        return id;
     }
 
-    public void setKey(InfoKey key) {
-        this.key = key;
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     public String getName() {
@@ -59,7 +61,7 @@ public class Info {
 
     @Override
     public String toString() {
-        String s = "PersonID: " + key.getPersonID() + ", Name: " + name + ", Address: " + address;
+        String s = "PersonID: " + id + ", Name: " + name + ", Address: " + address;
         return s;
     }
 

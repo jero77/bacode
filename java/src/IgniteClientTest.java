@@ -14,6 +14,7 @@ import org.apache.ignite.spi.discovery.tcp.ipfinder.vm.TcpDiscoveryVmIpFinder;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Random;
 
 public class IgniteClientTest {
 
@@ -36,7 +37,7 @@ public class IgniteClientTest {
         cacheConfigInfo.setName("info")
                 .setBackups(0)
                 .setCacheMode(CacheMode.PARTITIONED)
-                .setTypes(InfoKey.class, Info.class);
+                .setTypes(Integer.class, Info.class);
 
         // Discovery
         TcpDiscoverySpi spi = new TcpDiscoverySpi();
@@ -46,52 +47,49 @@ public class IgniteClientTest {
 
         // Ignite Configuration
         IgniteConfiguration cfg = new IgniteConfiguration();
-        cfg.setClientMode(true);
-        cfg.setDiscoverySpi(spi);
+        cfg.setClientMode(true)
+            .setDiscoverySpi(spi)
+            .setCacheConfiguration(cacheConfigIll, cacheConfigInfo);
 
 
         // Start client that connects to the cluster
         try (Ignite ignite = Ignition.start(cfg)) {
             System.out.println("Client started!");
 
-            // Get affinities for both caches
-            Affinity<IllKey> affIll = ignite.affinity("ill");
-            Affinity<InfoKey> affInfo = ignite.affinity("info");
-
             // create or get cache (key-value store)
             IgniteCache<IllKey, Ill> cacheIll = ignite.getOrCreateCache(cacheConfigIll);
             System.out.format("Created/Got cache [%s]!\n", cacheConfigIll.getName());
 
-            IgniteCache<InfoKey, Info> cacheInfo = ignite.getOrCreateCache(cacheConfigInfo);
-            System.out.format("Created/Got cache [%s]!\n", cacheConfigIll.getName());
+            IgniteCache<Integer, Info> cacheInfo = ignite.getOrCreateCache(cacheConfigInfo);
+            System.out.format("Created/Got cache [%s]!\n", cacheConfigInfo.getName());
 
             // put some test data
+            String[] terms = {"Asthma", "Cough", "Influenza", "Ulna Fracture", "Tibial Fracture"};
             // TODO generate random data
             for (int i = 0; i < 5; i++) {
                 // Some info
-                InfoKey key = new InfoKey(i);
-                Info info = new Info(key);
-                cacheInfo.put(key, info);
+                Info info = new Info(i);
+                cacheInfo.put(info.getId(), info);
 
                 // Some disease
-                IllKey illKey = new IllKey(i, "someDisease"+i);
+                String disease = terms[(new Random()).nextInt(terms.length)];
+                IllKey illKey = new IllKey(i, disease);
                 Ill ill = new Ill(illKey, "diseaseID"+(112*i));
                 cacheIll.put(illKey, ill);
             }
 
 
+            // Get affinities for both caches
+//            Affinity<IllKey> affIll = ignite.affinity("ill");
+//            Affinity<Integer> affInfo = ignite.affinity("info");
+
             // Get the affinity key mappings:
-            IllKey key = new IllKey(3, "someDisease3");
-            ClusterNode node = affIll.mapKeyToNode(key);
-            System.out.println("Addresses: " + Arrays.toString(node.addresses().toArray()));
-            System.out.println("NodeID: " + node.id() + "\nHostNames: " + Arrays.toString(node.hostNames().toArray()));
-
-            Object affinityKey = affIll.affinityKey(key);
-            Integer intKey = (Integer) affinityKey;
-            System.out.println("personID: " + intKey);
-
-            System.out.println("partition ID: " + affIll.partition(key));
-            System.out.println("number of partitions: " + affIll.partitions());
+//            IllKey key = cacheIll.;
+//            ClusterNode node = affIll.mapKeyToNode(key);
+////            System.out.println("Addresses: " + Arrays.toString(node.addresses().toArray()));
+//            System.out.println("NodeID: " + node.id() + ", Addresses: " + Arrays.toString(node.addresses().toArray()));
+//            System.out.println("Partition ID: " + affIll.partition(key));
+//            System.out.println("Number of partitions: " + affIll.partitions());
 
         } catch (ClientException e) {
             e.printStackTrace();
