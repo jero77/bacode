@@ -39,7 +39,8 @@ public class IgniteSetupCachesTest {
         cacheConfigInfo.setName("info")
                 .setBackups(0)
                 .setCacheMode(CacheMode.PARTITIONED)
-                .setIndexedTypes(Integer.class, Info.class);
+                .setIndexedTypes(Integer.class, Info.class)
+                .setAffinity(myAffinityFunction);
 
 
         // Discovery
