@@ -3,9 +3,7 @@ import org.apache.ignite.IgniteCache;
 import org.apache.ignite.Ignition;
 import org.apache.ignite.cache.CacheMode;
 import org.apache.ignite.cache.affinity.Affinity;
-import org.apache.ignite.cache.query.FieldsQueryCursor;
-import org.apache.ignite.cache.query.QueryCursor;
-import org.apache.ignite.cache.query.SqlFieldsQuery;
+import org.apache.ignite.cache.query.*;
 import org.apache.ignite.client.ClientException;
 import org.apache.ignite.cluster.ClusterNode;
 import org.apache.ignite.configuration.CacheConfiguration;
@@ -25,10 +23,13 @@ public class IgniteSetupCachesTest {
         final String ADDRESSES = "127.0.0.1:47500..47509";
         ClientConfiguration cliConfig = new ClientConfiguration().setAddresses(ADDRESSES);
 
-        // Cache configurations
+        // Affinity function
         String[] terms = {"Asthma", "Cough", "Influenza", "Ulna Fracture", "Tibial Fracture"};      // active domain
+        MyAffinityFunction<String> myAffinityFunction = new MyAffinityFunction<String>(0.2, terms);
+
+        // Cache configurations
+
         CacheConfiguration cacheConfigIll = new CacheConfiguration();
-        MyAffinityFunction<String> myAffinityFunction = new MyAffinityFunction<String>(2, 0.2, terms);
         cacheConfigIll.setName("ill")
                 .setBackups(0)
                 .setCacheMode(CacheMode.PARTITIONED)
@@ -39,7 +40,7 @@ public class IgniteSetupCachesTest {
         cacheConfigInfo.setName("info")
                 .setBackups(0)
                 .setCacheMode(CacheMode.PARTITIONED)
-                .setIndexedTypes(Integer.class, Info.class)
+                .setIndexedTypes(InfoKey.class, Info.class)
                 .setAffinity(myAffinityFunction);
 
 
@@ -65,7 +66,7 @@ public class IgniteSetupCachesTest {
             IgniteCache<IllKey, Ill> cacheIll = ignite.getOrCreateCache(cacheConfigIll);
             System.out.format("Created/Got cache [%s]!\n", cacheConfigIll.getName());
 
-            IgniteCache<Integer, Info> cacheInfo = ignite.getOrCreateCache(cacheConfigInfo);
+            IgniteCache<InfoKey, Info> cacheInfo = ignite.getOrCreateCache(cacheConfigInfo);
             System.out.format("Created/Got cache [%s]!\n", cacheConfigInfo.getName());
 
             // TODO generate random data
@@ -73,21 +74,37 @@ public class IgniteSetupCachesTest {
             // put some test data
             cacheIll.clear();
             cacheInfo.clear();
-            for (int i = 0; i < 5; i++) {
-                // Some info
-                Info info = new Info(i);
-                cacheInfo.put(info.getId(), info);
-                System.out.println("Added: " + info);
-
-                // Some disease
+            for (int i = 0; i < 10; i++) {
+                // Some random disease for a random personID
                 String disease = terms[(new Random()).nextInt(terms.length)];
-                IllKey illKey = new IllKey(i, disease);
-                Ill ill = new Ill(illKey, "diseaseID"+(112*i));
+                int personID = (new Random()).nextInt(4);
+                IllKey illKey = new IllKey(personID, disease);
+                Ill ill = new Ill(illKey, "diseaseID" + (112 * i));
                 cacheIll.put(illKey, ill);
                 System.out.println("Added: " + ill + "\n");
+
+                // Find out where this person's ID is already stored in Ill-Cache to collocate properly
+                SqlFieldsQuery query = new SqlFieldsQuery("SELECT disease from Ill where personID="+personID);
+                try (QueryCursor<List<?>> cursor = cacheIll.query(query)) {
+                    for (List<?> row : cursor) {
+
+                        // Find the partitions to assign the Info-Object to & create InfoKey
+                        IllKey testKey = new IllKey(personID, (String) row.get(0));
+                        System.out.println("testKey= " + testKey);              // Debug
+                        int p = myAffinityFunction.partition(testKey);      // testKey would be assigned to partition p
+                        InfoKey infoKey = new InfoKey(personID, p);
+
+                        if (cacheInfo.containsKey(infoKey)) {
+                            // TODO nothing?
+                        } else {
+                            // TODO put it into the cache with the correct information!
+                        }
+
+                    }
+                }
+
+
             }
-
-
             // Some test query
             // TODO explain query failure --> maybe 2nd affinity function is needed for derived fragmentation?
             // TODO derived fragmentation

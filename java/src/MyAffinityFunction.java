@@ -157,11 +157,7 @@ public class MyAffinityFunction<T> implements AffinityFunction, Serializable {
         }
         else if (key instanceof InfoKey) {
             System.out.println("partition(key) got InfoKey! Assigning partition based on derived fragmentation ..."); //Debug
-            // Try to find the partition(s) based on the derived fragmentation (InfoKey.id->IllKey.personID)
-
-
-            // Else assign random partition
-            partition = (new Random()).nextInt(parts);
+            partition = ((InfoKey) key).getAffinityPartition();
         }
 
         return partition;
@@ -394,7 +390,7 @@ public class MyAffinityFunction<T> implements AffinityFunction, Serializable {
 
 //################################# Derived Fragmentation  ########################################
 
-    private int[]
+
 
 
 //##################### MAIN-Method  ######################
@@ -409,7 +405,7 @@ public class MyAffinityFunction<T> implements AffinityFunction, Serializable {
         String[] terms = {"Asthma", "Cough", "Influenza", "Ulna Fracture", "Tibial Fracture"};
 
         // Prepare clustering test
-        MyAffinityFunction<String> maf = new MyAffinityFunction<String>(2, 0.2, terms);
+        MyAffinityFunction<String> maf = new MyAffinityFunction<String>(0.2, terms);
 
         // Test clustering
         ArrayList<Cluster<String>> clusters = maf.clusters;

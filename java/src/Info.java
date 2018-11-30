@@ -9,6 +9,7 @@ public class Info implements Serializable {
      * This key is used for affinity mapping to achieve a derived fragmentation of the {@link Ill}-Table.
      * It is necessary, because in this way the affinity function can distiguish between {@link Ill}- and
      * {@link Info}-Objects properly.
+     * For more details see {@link InfoKey} and {@link MyAffinityFunction}.
      */
     @AffinityKeyMapped
     private InfoKey key;
