@@ -2,7 +2,6 @@ import org.apache.ignite.binary.BinaryObject;
 import org.apache.ignite.cache.affinity.AffinityFunction;
 import org.apache.ignite.cache.affinity.AffinityFunctionContext;
 import org.apache.ignite.cluster.ClusterNode;
-import org.apache.ignite.internal.binary.BinaryObjectImpl;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
@@ -19,12 +18,6 @@ import java.util.*;
  * @param <T> The domain of the relaxation attribute (e.g. String or Integer)
  */
 public class MyAffinityFunction<T> implements AffinityFunction, Serializable {
-
-    /**
-     * Maximum partition count
-     */
-    public static final int DFLT_PARTITION_COUNT = 1024;
-
 
     /**
      * Number of partitions (should be same for
@@ -100,9 +93,7 @@ public class MyAffinityFunction<T> implements AffinityFunction, Serializable {
 
         // Calculate clustering (index of cluster implies mapping of cluster to partition)
         // TODO read terms from csv instead of as predefined String array
-        List<T> termList = new LinkedList<T>();
-        for (T term : terms)
-            termList.add(term);
+        List<T> termList = new LinkedList<>(Arrays.asList(terms));
         clusters = clustering(termList);
 
         // each cluster is assigned to a partition and for each cluster the same partition is used also for the
@@ -142,8 +133,10 @@ public class MyAffinityFunction<T> implements AffinityFunction, Serializable {
 
 
     /**
-     * @param key
-     * @return
+     * Returns the partition mapping for the given key.
+     * See {@link AffinityFunction#partition(Object)} for more details.
+     * @param key Key
+     * @return Partition
      */
     @Override
     public int partition(Object key) {
@@ -236,7 +229,7 @@ public class MyAffinityFunction<T> implements AffinityFunction, Serializable {
                 - partition 0 with respiratory diseases --> node 0, partition 1 with fractures --> node 1
         */
         System.out.print("Assigning partition " + partition + " to node " + allNodes.get(partition).id());     // Debug
-        List<ClusterNode> result = new ArrayList<ClusterNode>();
+        List<ClusterNode> result = new ArrayList<>();
         result.add(allNodes.get(partition));
         return result;
     }
@@ -258,7 +251,7 @@ public class MyAffinityFunction<T> implements AffinityFunction, Serializable {
         // Initialize the first cluster with all values from the active domain (except head element)
         ArrayList<Cluster<T>> clusters = new ArrayList<>();
         T headElement = activeDomain.remove(0);
-        Cluster<T> c = new Cluster<T>(headElement, new HashSet<T>(activeDomain));
+        Cluster<T> c = new Cluster<>(headElement, new HashSet<>(activeDomain));
         clusters.add(0, c);
 
         // Initial minimal similarity for next head
@@ -311,7 +304,7 @@ public class MyAffinityFunction<T> implements AffinityFunction, Serializable {
             }
 
             i = i + 1;
-            c = new Cluster<T>(nextHead, set);
+            c = new Cluster<>(nextHead, set);
             clusters.add(i, c);
 
 
@@ -351,12 +344,11 @@ public class MyAffinityFunction<T> implements AffinityFunction, Serializable {
         String key1 = map.get(term1) + "+" + map.get(term2);
         String key2 = map.get(term2) + "+" + map.get(term1);
 
-        double sim = 0;
-        if (similarities.containsKey(key1)) {
+        double sim;
+        if (similarities.containsKey(key1))
             sim = similarities.get(key1);
-        } else {
+        else
             sim = similarities.get(key2);
-        }
         return sim;
     }
 
@@ -413,7 +405,7 @@ public class MyAffinityFunction<T> implements AffinityFunction, Serializable {
         String[] terms = {"Asthma", "Cough", "Influenza", "Ulna Fracture", "Tibial Fracture"};
 
         // Prepare clustering test
-        MyAffinityFunction<String> maf = new MyAffinityFunction<String>(0.2, terms);
+        MyAffinityFunction<String> maf = new MyAffinityFunction<>(0.2, terms);
 
         // Test clustering
         ArrayList<Cluster<String>> clusters = maf.clusters;
