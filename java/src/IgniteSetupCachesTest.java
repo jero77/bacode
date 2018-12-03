@@ -69,9 +69,7 @@ public class IgniteSetupCachesTest {
             IgniteCache<InfoKey, Info> cacheInfo = ignite.getOrCreateCache(cacheConfigInfo);
             System.out.format("Created/Got cache [%s]!\n", cacheConfigInfo.getName());
 
-            // TODO generate random data
-
-            // put some test data
+            // Clear caches & put some test data
             cacheIll.clear();
             cacheInfo.clear();
             for (int i = 0; i < 10; i++) {
@@ -81,34 +79,20 @@ public class IgniteSetupCachesTest {
                 IllKey illKey = new IllKey(personID, disease);
                 Ill ill = new Ill(illKey, "diseaseID" + (112 * i));
                 cacheIll.put(illKey, ill);
-                System.out.println("Added: " + ill + "\n");
+                System.out.println("Added: " + ill);
 
-                // Find out where this person's ID is already stored in Ill-Cache to collocate properly
-                SqlFieldsQuery query = new SqlFieldsQuery("SELECT disease from Ill where personID="+personID);
-                try (QueryCursor<List<?>> cursor = cacheIll.query(query)) {
-                    for (List<?> row : cursor) {
+                // Add the info-object to the same partition (if not present yet with another disease of same cluster)
+                int p = myAffinityFunction.partition(illKey);
+                InfoKey infoKey = new InfoKey(personID, p);
+                Info info = new Info(infoKey);
+                cacheInfo.putIfAbsent(infoKey, info);
+                System.out.println("Added: " + info);
 
-                        // Find the partitions to assign the Info-Object to & create InfoKey
-                        IllKey testKey = new IllKey(personID, (String) row.get(0));
-                        System.out.println("testKey= " + testKey);              // Debug
-                        int p = myAffinityFunction.partition(testKey);      // testKey would be assigned to partition p
-                        InfoKey infoKey = new InfoKey(personID, p);
-
-                        if (cacheInfo.containsKey(infoKey)) {
-                            // TODO nothing?
-                        } else {
-                            // TODO put it into the cache with the correct information!
-                        }
-
-                    }
-                }
-
-
+                System.out.println("-----------------------------------------------------------------------------");
             }
+
+
             // Some test query
-            // TODO explain query failure --> maybe 2nd affinity function is needed for derived fragmentation?
-            // TODO derived fragmentation
-            // Failure: ignite maps info-objects randomly or maybe equally distributed but not collocated (yet)
             String query = "Select * from ill, \"info\".info where ill.personid=info.id";
             QueryCursor<List<?>> cursor = cacheIll.query(new SqlFieldsQuery(query));
             System.out.println("Query-result:");

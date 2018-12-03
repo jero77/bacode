@@ -57,4 +57,5 @@ public class Ill implements Serializable {
         String s = "PersonID: " + key.getPersonID() + ", Disease(MeSH-ID): " + key.getDisease() + "(" + meshID + ")";
         return s;
     }
+
 }
