@@ -2,14 +2,14 @@ import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.Ignition;
 import org.apache.ignite.cache.CacheMode;
-import org.apache.ignite.cache.query.FieldsQueryCursor;
-import org.apache.ignite.cache.query.SqlFieldsQuery;
+import org.apache.ignite.cache.query.*;
 import org.apache.ignite.client.ClientException;
 import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
 import org.apache.ignite.spi.discovery.tcp.ipfinder.vm.TcpDiscoveryVmIpFinder;
 
+import javax.cache.Cache.Entry;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
@@ -74,14 +74,21 @@ public class IgniteSetupCachesTest {
                 String disease = terms[(new Random()).nextInt(terms.length)];
                 int personID = (new Random()).nextInt(4);
                 IllKey illKey = new IllKey(personID, disease);
-                Ill ill = new Ill(illKey, "diseaseID" + (112 * i));
+                Ill ill = new Ill(illKey, "diseaseID123");
                 cacheIll.put(illKey, ill);
                 System.out.println("Added: " + ill);
 
                 // Add the info-object to the same partition (if not present yet with another disease of same cluster)
                 int p = myAffinityFunction.partition(illKey);
                 InfoKey infoKey = new InfoKey(personID, p);
-                Info info = new Info(infoKey);
+                SqlQuery sql = new SqlQuery(Info.class, "id = ?");
+                List<Entry<InfoKey, Info>> list = cacheInfo.query(sql.setArgs(personID)).getAll();
+                Info info;
+                if (list.size() >= 1)
+                    info = list.get(0).getValue();
+                else
+                    info = new Info(infoKey);
+
                 cacheInfo.putIfAbsent(infoKey, info);
                 System.out.println("Added: " + info);
 

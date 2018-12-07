@@ -1,3 +1,4 @@
+import com.github.javafaker.Faker;
 import org.apache.ignite.cache.affinity.AffinityKeyMapped;
 import org.apache.ignite.cache.query.annotations.QuerySqlField;
 
@@ -24,11 +25,16 @@ public class Info implements Serializable {
 
 //#################### Constructors ####################
 
-
+    /**
+     * Creates a new Info-object with randomized name and address (see {@link Faker}
+     * @param key
+     */
     public Info(InfoKey key) {
         this.key = key;
-        this.name = "Name of " + key.getId();
-        this.address = "Address of " + key.getId();
+
+        Faker faker = new Faker();
+        this.name = faker.name().fullName();
+        this.address = faker.address().fullAddress();
     }
 
     public Info(InfoKey key, String name, String address) {
@@ -63,6 +69,8 @@ public class Info implements Serializable {
     public void setAddress(String address) {
         this.address = address;
     }
+
+
 
 //##################### toString #########################
 

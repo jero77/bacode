@@ -98,6 +98,7 @@ public class MyAffinityFunction<T> implements AffinityFunction, Serializable {
 
         // each cluster is assigned to a partition and for each cluster the same partition is used also for the
         // derived fragmentation
+        // TODO instead of same partition as the cluster use one extra partition per node to store ALL derived fragments
         parts = clusters.size();
 
         // Debug
