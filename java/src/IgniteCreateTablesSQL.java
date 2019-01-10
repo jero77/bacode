@@ -73,7 +73,6 @@ public class IgniteCreateTablesSQL {
 
     private static void fillTables(Connection conn) throws SQLException {
         // Fill tables
-        // TODO automate table filling with randomized IDs 'n shit
         String insertStmt = "INSERT INTO ILL (PatientID, Diagnosis) VALUES (?, ?)";
         PreparedStatement prep = null;
 
@@ -128,8 +127,6 @@ public class IgniteCreateTablesSQL {
 
     @Nullable
     private static void createTables(Connection conn) throws SQLException {
-        //TODO clustering-based fragmentation
-
         // Statement
         Statement stmt = conn.createStatement();
 

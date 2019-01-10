@@ -1,3 +1,4 @@
+import com.github.javafaker.Faker;
 import org.apache.ignite.cache.affinity.AffinityKeyMapped;
 import org.apache.ignite.cache.query.annotations.QuerySqlField;
 
@@ -6,12 +7,13 @@ import java.io.Serializable;
 public class Info implements Serializable {
 
     /**
-     * The ID (key) of a person. This key will be used for affinity collocation of the Ill-Cache and this will cause
-     * an Info-object to be stored at the same partition together with the corresponding Ill-object.
-    */
+     * This key is used for affinity mapping to achieve a derived fragmentation of the {@link Ill}-Table.
+     * It is necessary, because in this way the affinity function can distiguish between {@link Ill}- and
+     * {@link Info}-Objects properly.
+     * For more details see {@link InfoKey} and {@link MyAffinityFunction}.
+     */
     @AffinityKeyMapped
-    @QuerySqlField (index = true)
-    private Integer id;
+    private InfoKey key;
 
     @QuerySqlField
     private String name;
@@ -23,29 +25,33 @@ public class Info implements Serializable {
 
 //#################### Constructors ####################
 
-    public Info(int id, String name, String address) {
-        this.id = id;
+    /**
+     * Creates a new Info-object with randomized name and address (see {@link Faker}
+     * @param key
+     */
+    public Info(InfoKey key) {
+        this.key = key;
+
+        Faker faker = new Faker();
+        this.name = faker.name().fullName();
+        this.address = faker.address().fullAddress();
+    }
+
+    public Info(InfoKey key, String name, String address) {
+        this.key = key;
         this.name = name;
         this.address = address;
     }
 
-
-    public Info(int id) {
-        this.id = id;
-        this.name = "Name of " + id;
-        this.address = "Address of " + id;
-    }
-
-
 //#################### Getter & Setter ####################
 
 
-    public Integer getId() {
-        return id;
+    public InfoKey getKey() {
+        return key;
     }
 
-    public void setId(Integer id) {
-        this.id = id;
+    public void setKey(InfoKey key) {
+        this.key = key;
     }
 
     public String getName() {
@@ -64,11 +70,13 @@ public class Info implements Serializable {
         this.address = address;
     }
 
+
+
 //##################### toString #########################
 
     @Override
     public String toString() {
-        String s = "PersonID: " + id + ", Name: " + name + ", Address: " + address;
+        String s = "PersonID: " + key.getId() + ", Name: " + name + ", Address: " + address;
         return s;
     }
 

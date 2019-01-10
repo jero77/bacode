@@ -73,5 +73,6 @@
     <orderEntry type="library" name="Maven: org.springframework:spring-expression:4.3.16.RELEASE" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-jdbc:4.3.16.RELEASE" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-tx:4.3.16.RELEASE" level="project" />
+    <orderEntry type="library" name="com.github.javafaker:javafaker:0.16" level="project" />
   </component>
 </module>

@@ -6,9 +6,11 @@ import java.io.Serializable;
 public class Ill implements Serializable {
 
     /**
-     * Key which will be used to cache an Ill-Object {@link IllKey}.
+     * Key which will be used to cache an Ill-Object {@link IllKey}. Additionally, this key will be used for
+     * clustering-based fragmentation of the relaxation attribute {@link IllKey#disease} and also to collocate
+     * {@link Info} objects to corresponding Ill-objects via derived fragmentation (on {@link Info#id}).
       */
-    //@AffinityKeyMapped
+    @AffinityKeyMapped
     private IllKey key;
 
     /**
@@ -55,4 +57,5 @@ public class Ill implements Serializable {
         String s = "PersonID: " + key.getPersonID() + ", Disease(MeSH-ID): " + key.getDisease() + "(" + meshID + ")";
         return s;
     }
+
 }

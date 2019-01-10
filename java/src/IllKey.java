@@ -18,11 +18,9 @@ public class IllKey implements Serializable {
     /**
      * The disease this person has/had. This term will be used for the clustering-based fragmentation.
      * Affinity collocation based on this attribute (relaxation attribute) is used to obtain a mapping
-     * from a disease term to a partition (to a node)
-     * {@link AffinityKeyMapped}
+     * from a disease term to a partition (to a node).
      * {@link MyAffinityFunction}
      */
-    @AffinityKeyMapped
     @QuerySqlField
     private String disease;
 
