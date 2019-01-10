@@ -223,15 +223,15 @@ public class MyAffinityFunction<T> implements AffinityFunction, Serializable {
     private List<ClusterNode> assignPartition(int partition, List<ClusterNode> allNodes) {
         // TODO Assign partition i to the node it belongs to according to the clustering-based fragmentation
         // TODO or according to the bin packing problem?!?!
-        // TODO adapt assingment to depend on number of nodes and partitions
+        // TODO adapt assingment to depend on number of nodes and  (currently mod)
         /* (assuming i partitions and i nodes)
-           The i-th partition is assigned to the i-th node
-           Example:
+           The i-th partition is assigned to the (i % number of nodes)-th node
+           Example: 2 Nodes
                 - partition 0 with respiratory diseases --> node 0, partition 1 with fractures --> node 1
         */
         System.out.print("Assigning partition " + partition + " to node " + allNodes.get(partition).id());     // Debug
         List<ClusterNode> result = new ArrayList<>();
-        result.add(allNodes.get(partition));
+        result.add(allNodes.get(partition % allNodes.size()));
         return result;
     }
 
