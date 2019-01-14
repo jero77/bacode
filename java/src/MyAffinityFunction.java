@@ -482,16 +482,21 @@ public class MyAffinityFunction implements AffinityFunction, Serializable {
         // 0.125    |    15     |       6
         // 0.115    |    15     |       6
         // 0.11     |    6      |       16
-        // < 0.11 there is 3 clusters and 1 cluster (btw 0.01 steps do not produce other values than in the table)
+        // < 0.10 there is 3 clusters and 1 cluster (btw 0.001 steps do not produce other values than in the table)
         termsFile = "out" + separ + "csv" + separ + "terms100.txt";
         simFile = "out" + separ + "csv" + separ + "result100.csv";
         // Test clustering (with statistics)
-        for (double alpha = 0.15; alpha >= 0.11; alpha=alpha-0.05) {
+        for (double alpha = 0.15; alpha >= 0.10; alpha=alpha-0.005) {
             maf = new MyAffinityFunction(alpha, termsFile, simFile);
             clusters = maf.clusters;
             System.out.println("alpha: " + alpha + "\t\tClustering size: " + clusters.size()
                     + "\t\tavg. Terms/Cluster: " + maf.terms.size() / clusters.size());
         }
+        double alpha = 0.1111000000000001;
+        maf = new MyAffinityFunction(alpha, termsFile, simFile);
+        clusters = maf.clusters;
+        System.out.println("alpha: " + alpha + "\t\tClustering size: " + clusters.size()
+                + "\t\tavg. Terms/Cluster: " + maf.terms.size() / clusters.size());
     }
 
 
