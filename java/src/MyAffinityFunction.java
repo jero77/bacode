@@ -1,3 +1,4 @@
+import org.apache.commons.collections4.multimap.ArrayListValuedHashMap;
 import org.apache.ignite.binary.BinaryObject;
 import org.apache.ignite.cache.affinity.AffinityFunction;
 import org.apache.ignite.cache.affinity.AffinityFunctionContext;
@@ -5,6 +6,7 @@ import org.apache.ignite.cluster.ClusterNode;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
+import java.lang.reflect.Array;
 import java.util.*;
 
 /**
@@ -38,20 +40,23 @@ public class MyAffinityFunction implements AffinityFunction, Serializable {
     private final double alpha;
 
     /**
-     * HashMap for the pairwise similarities of predefined MeSH terms (active domain here)
+     * HashMap for the pairwise similarities of predefined MeSH terms (active domain here), stored with key
+     * "term1+term2" and value as double
      */
     private HashMap<String, Double> similarities;
 
     /**
-     * Array of all the terms occuring in the active domain of the relaxation attribute
+     * ArrayList of all the terms occuring in the active domain of the relaxation attribute
      */
-    private String[] terms;
+    private ArrayList<String> terms;
 
     /**
      * The clusters obtained from the clustering algorithm (will be initialized in constructor). Also provides a
      * mapping of each cluster to a partition with abusing the index of the cluster in this ArrayList.
      */
     private ArrayList<Cluster<String>> clusters;
+
+
 
 
 //##################### Constructors ######################
@@ -74,36 +79,32 @@ public class MyAffinityFunction implements AffinityFunction, Serializable {
      */
     public MyAffinityFunction(double alpha) {
         this.alpha = alpha;
-        this.terms = DFLT_TERMS;
+        this.terms = new ArrayList<>();
+        for (String s : DFLT_TERMS)
+            terms.add(s);
 
         // Init similarities HashMap with predefined active domain DFLT_TERMS
-        similarities = new HashMap<>(terms.length);
-        similarities.put("C0004096+C0010200", 0.2);      //0.2<>Asthma(C0004096)<>Cough(C0010200)
-        similarities.put("C0004096+C0021400", 0.2);      //0.2<>Asthma(C0004096)<>Influenza(C0021400)
-        similarities.put("C0004096+C0040185", 0.1429);   //0.1429<>Asthma(C0004096)<>Tibial Fracture(C0040185)
-        similarities.put("C0004096+C0041601", 0.1429);   //0.1429<>Asthma(C0004096)<>Ulna Fracture(C0041601)
-        similarities.put("C0010200+C0021400", 0.2);      //0.2<>Cough(C0010200)<>Influenza(C0021400)
-        similarities.put("C0010200+C0040185", 0.1429);   //0.1429<>Cough(C0010200)<>Tibial Fracture(C0040185)
-        similarities.put("C0010200+C0041601", 0.1429);   //0.1429<>Cough(C0010200)<>Ulna Fracture(C0041601)
-        similarities.put("C0021400+C0040185", 0.1429);   //0.1429<>Influenza(C0021400)<>Tibial Fracture(C0040185)
-        similarities.put("C0021400+C0041601", 0.1429);   //0.1429<>Influenza(C0021400)<>Ulna Fracture(C0041601)
-        similarities.put("C0040185+C0041601", 0.3333);   //.3333<>Tibial Fracture(C0040185)<>Ulna Fracture(C0041601)
+        this.similarities = new HashMap<>();
+        this.similarities.put("Asthma+Cough", 0.2);                         //0.2<>Asthma<>Cough
+        this.similarities.put("Asthma+Influenza", 0.2);                     //0.2<>Asthma<>Influenza
+        this.similarities.put("Asthma+Tibial Fracture", 0.1429);            //0.1429<>Asthma<>Tibial Fracture
+        this.similarities.put("Asthma+Ulna Fracture", 0.1429);              //0.1429<>Asthma<>Ulna Fracture
+        this.similarities.put("Cough+Influenza", 0.2);                      //0.2<>Cough<>Influenza
+        this.similarities.put("Cough+Tibial Fracture", 0.1429);             //0.1429<>Cough)<>Tibial Fracture
+        this.similarities.put("Cough+Ulna Fracture", 0.1429);               //0.1429<>Cough<>Ulna Fracture
+        this.similarities.put("Influenza+Tibial Fracture", 0.1429);         //0.1429<>Influenza<>Tibial Fracture
+        this.similarities.put("Influenza+Ulna Fracture", 0.1429);           //0.1429<>Influenza<>Ulna Fracture
+        this.similarities.put("Tibial Fracture+Ulna Fracture", 0.3333);     //.3333<>Tibial Fracture<>Ulna Fracture
 
         // Calculate clustering (index of cluster implies mapping of cluster to partition)
-        List<String> termList = new LinkedList<>(Arrays.asList(this.terms));
+        ArrayList<String> termList = new ArrayList<>(this.terms);
         this.clusters = clustering(termList);
 
         // each cluster is assigned to a partition and for each cluster the same partition is used also for the
         // derived fragmentation
         // TODO instead of same partition as the cluster use one extra partition per node to store ALL derived fragments
         this.parts = clusters.size();
-
-        // Debug
-        System.out.println("Clustering: Size=" + clusters.size() + ", Partitions=" + parts);
-        for (Cluster c : clusters)
-            System.out.println(c);
     }
-
 
     /**
      *
@@ -116,43 +117,37 @@ public class MyAffinityFunction implements AffinityFunction, Serializable {
 
         // init terms from file
         String line;
-        ArrayList<String> lines = new ArrayList<String>();
+        this.terms = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new FileReader(termsFile))) {
             while ((line = reader.readLine()) != null) {
-                lines.add(line);
+                terms.add(line);
             }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        System.out.println("Read " + lines.size() + " terms from file");    // DEBUG
-        this.terms = lines.toArray(this.terms);
-
 
         // TODO maybe test other implementations (e.g. other data structure, as cache, ...)
         // init similarities HashMap from file (form: similarity<>term1(CUI1)<>term2(CUI2)\n...)
-        this.similarities = new HashMap<String, Double>();
-        try (BufferedReader reader = new BufferedReader(new FileReader(termsFile))) {
+        this.similarities = new HashMap<>();
+        try (BufferedReader reader = new BufferedReader(new FileReader(similaritiesFile))) {
             while ((line = reader.readLine()) != null) {
+                // slice line by '<>' & remove (CUI)
                 String[] things = line.split("<>");
-                this.similarities.put(things[1] + "+" + things[2], Double.parseDouble(things[0]));
+                String key = things[1].replaceAll("\\(.*\\)", "");
+                key = key + "+" + things[2].replaceAll("\\(.*\\)", "");
+                this.similarities.put(key, Double.parseDouble(things[0]));
             }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        System.out.println("Read " + this.similarities.size() + " similarities from file");
-
 
         // calculate clustering (index of clusters implies mapping of cluster to partition)
-        this.clusters = clustering(Arrays.asList(this.terms));
+        this.clusters = clustering(this.terms);
         this.parts = this.clusters.size();
-        // Debug
-        System.out.println("Clustering: Size=" + clusters.size() + ", Partitions=" + parts);
-        for (Cluster c : clusters)
-            System.out.println(c);
     }
 
 
@@ -286,20 +281,20 @@ public class MyAffinityFunction implements AffinityFunction, Serializable {
      *
      * @param activeDomain The active domain of the relaxation attribute
      */
-    private ArrayList<Cluster<String>> clustering(@NotNull List<String> activeDomain) {
+    private ArrayList<Cluster<String>> clustering(ArrayList<String> activeDomain) {
         if (activeDomain.isEmpty())
             throw new IllegalArgumentException("The list containing the active domain is empty.");
 
 
         // Initialize the first cluster with all values from the active domain (except head element)
-        ArrayList<Cluster<String>> clusters = new ArrayList<Cluster<String>>();
+        ArrayList<Cluster<String>> clusters = new ArrayList<>();
         String headElement = activeDomain.remove(0);
-        Cluster<String> c = new Cluster<String>(headElement, new HashSet<>(activeDomain));
+        Cluster<String> c = new Cluster<>(headElement, new HashSet<>(activeDomain));
         clusters.add(0, c);
 
         // Initial minimal similarity for next head
         double sim_min = 1.0;
-        for (String term : c.getAdom()) {       // note: adom does not contain head!
+        for (String term : c.getAdom()) {       // NOTE: adom does not contain head!
             double sim = similarity(term, headElement);
             if (sim < sim_min)
                 sim_min = sim;
@@ -330,26 +325,32 @@ public class MyAffinityFunction implements AffinityFunction, Serializable {
 
 
             // Create next cluster
-            HashSet<String> set = new HashSet<>();
+            HashSet<String> nextAdom = new HashSet<>();
             for (int j = 0; j <= i; j++) {
 
+                // Get head and adom
                 c = clusters.get(j);
                 String head_j = c.getHead();
-                Set<String> adom = c.getAdom();
+                HashSet<String> adom_j = new HashSet<>(c.getAdom());
 
-                // Move terms from the old clusters to the new cluster if they are more similar to nextHead
-                for (String term : adom) {
+                // Move terms from old cluster's adom to new cluster's adom if they are more similar to nextHead
+                Iterator<String> it = adom_j.iterator();    // for each trouble with ConcurrentModificationException
+                while (it.hasNext()) {
+                    String term = it.next();
                     if (similarity(term, head_j) <= similarity(term, nextHead)) {
-                        set.add(term);          // add to new cluster
-                        adom.remove(term);      // remove from current cluster
+                        it.remove();              // remove from current cluster's adom
+                        nextAdom.add(term);             // add to new cluster's adom
                     }
                 }
+
+                // Set (possibly modified) adom_j for old cluster
+                c.setAdom(adom_j);
             }
 
+            // Add the new cluster to the clustering
             i = i + 1;
-            c = new Cluster<String>(nextHead, set);
+            c = new Cluster<String>(nextHead, nextAdom);
             clusters.add(i, c);
-
 
             // Update minimal similarity
             double min = 1;
@@ -366,32 +367,15 @@ public class MyAffinityFunction implements AffinityFunction, Serializable {
             sim_min = min;
         }
 
-
         return clusters;
     }
 
 
     private double similarity(String term1, String term2) {
-
-        // TODO ??? ??? ???
-
-        // Map term to CUI (Concept Unique Identifier)
-        HashMap<String, String> map = new HashMap<>();
-        map.put("Asthma", "C0004096");
-        map.put("Cough", "C0010200");
-        map.put("Influenza", "C0021400");
-        map.put("Tibial Fracture", "C0040185");
-        map.put("Ulna Fracture", "C0041601");
-
-        // Get key and return similarity value
-        String key1 = map.get(term1) + "+" + map.get(term2);
-        String key2 = map.get(term2) + "+" + map.get(term1);
-
-        double sim;
-        if (similarities.containsKey(key1))
-            sim = similarities.get(key1);
-        else
-            sim = similarities.get(key2);
+        Double sim;
+        sim = similarities.get(term1 + "+" + term2);
+        if (sim == null)            // key is not contained (or value is null but this should NOT occur)
+            sim = similarities.get(term2 + "+" + term1);
         return sim;
     }
 
@@ -440,17 +424,73 @@ public class MyAffinityFunction implements AffinityFunction, Serializable {
     /**
      * Test unit
      *
-     * @param args
+     * @param args Not used
      */
     public static void main(String[] args) {
 
-        // Prepare clustering test
+        // Prepare clustering test for simple default adom
         MyAffinityFunction maf = new MyAffinityFunction(0.2);
 
         // Test clustering
         ArrayList<Cluster<String>> clusters = maf.clusters;
+        System.out.println("Clustering size: " + clusters.size());
         for (Cluster c : clusters) {
             System.out.println(c);
+        }
+        System.out.println("-----------------------------------------------------------------");
+
+        // Now test for small dataset (alpha 0.12 is relatively good)
+        // alpha = 0.1 --> 1 cluster, alpha = 0.2 --> 9 clusters, alpha = 0.15 --> 7 clusters,
+        // alpha = 0.13 --> 6 clusters, alpha = 0.12 --> 5 clusters, alpha = 0.1111 --> 1 cluster (minimal sim)
+        String separ = File.separator;
+        String termsFile = "out" + separ + "csv" + separ + "terms10.txt";
+        String simFile = "out" + separ + "csv" + separ + "result10.csv";
+        maf = new MyAffinityFunction(0.12, termsFile, simFile);
+
+        // Test clustering
+        clusters = maf.clusters;
+        System.out.println("Clustering size: " + clusters.size());
+        for (Cluster c : clusters) {
+            System.out.println(c);
+        }
+        System.out.println("-----------------------------------------------------------------");
+
+        // bigger data set (alpha > 0.1111 and <= 0.15)
+        // alpha = 0.2 --> many small clusters (often only head), alpha = 0.1 --> 1 cluster, alpha = 0.15 --> 12,
+        // alpha = 0.12 --> 8 (not bad), alpha = 0.13 & 0.14 --> 9 (not bad), alpha = 0.11 & 0.1111--> 2 (bad, min sim),
+        // alpha = 0.115 & 0.1125 & 0.1112 --> 8 (not bad)
+        termsFile = "out" + separ + "csv" + separ + "terms30.txt";
+        simFile = "out" + separ + "csv" + separ + "result30.csv";
+        maf = new MyAffinityFunction(0.13, termsFile, simFile);
+
+        // Test clustering
+        clusters = maf.clusters;
+        System.out.println("Clustering size: " + clusters.size()
+                + ", avg. Terms/Cluster: " + maf.terms.size() / clusters.size());
+        for (Cluster c : clusters) {
+            System.out.println(c);
+        }
+        System.out.println("-----------------------------------------------------------------");
+
+
+        // buiggest data set
+        // alpha    | clusters  | terms/cluster         (interesting values)
+        // 0.2      |    51     |       1
+        // 0.15     |    34     |       2
+        // 0.14     |    22     |       4
+        // 0.13     |    22     |       4
+        // 0.125    |    15     |       6
+        // 0.115    |    15     |       6
+        // 0.11     |    6      |       16
+        // < 0.11 there is 3 clusters and 1 cluster (btw 0.01 steps do not produce other values than in the table)
+        termsFile = "out" + separ + "csv" + separ + "terms100.txt";
+        simFile = "out" + separ + "csv" + separ + "result100.csv";
+        // Test clustering (with statistics)
+        for (double alpha = 0.15; alpha >= 0.11; alpha=alpha-0.05) {
+            maf = new MyAffinityFunction(alpha, termsFile, simFile);
+            clusters = maf.clusters;
+            System.out.println("alpha: " + alpha + "\t\tClustering size: " + clusters.size()
+                    + "\t\tavg. Terms/Cluster: " + maf.terms.size() / clusters.size());
         }
     }
 

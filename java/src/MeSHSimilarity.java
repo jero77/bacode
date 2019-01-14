@@ -9,7 +9,7 @@ public class MeSHSimilarity {
     private final static int MAX_TERMS = 100;
 
     /**
-     * Generates csv file with paris of terms for similarity calculation, uses out/csv/mesh.csv as input
+     * Generates csv file with pairs of terms for similarity calculation, uses out/csv/mesh.csv as input
      * @param args not used
      */
     public static void main(String[] args) {

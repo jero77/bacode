@@ -65,8 +65,12 @@ public class Cluster<T> implements Serializable {
         return adom;
     }
 
+    public void setAdom(Set<T> adom) {
+        this.adom = adom;
+    }
 
-//##################### Overwritten Methods #########################
+
+    //##################### Overwritten Methods #########################
 
     /**
      * Simple toString method
