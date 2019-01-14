@@ -10,7 +10,7 @@
 
 
     <properties>
-        <ignite.version>2.6.0</ignite.version>
+        <ignite.version>2.7.0</ignite.version>
         <jena.version>3.9.0</jena.version>
         <jOOQ.version>3.11.7</jOOQ.version>
     </properties>

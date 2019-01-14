@@ -10,7 +10,7 @@ import java.util.Set;
  * relaxation attribute.
  * A cluster is identified by it's head element and for all the other values belonging to this cluster there
  * is a similarity value to the head element defined and this value is greater or equal to the in the
- * clustering-procedure ({@link MyAffinityFunction#clustering(List)} defined similarity threshold.
+ * clustering-procedure defined similarity threshold.
  * The parameter type T is the domain of the relaxation attribute, e.g. a String or an Integer.
  */
 public class Cluster<T> implements Serializable {
@@ -75,7 +75,7 @@ public class Cluster<T> implements Serializable {
     @Override
     public String toString() {
         String s =  "Head of the cluster: " + this.head;
-        for (T t : this.adom)
+        for (Object t : this.adom)
             s += "\n\tTerm: " + t;
         return s;
     }

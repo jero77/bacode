@@ -11,6 +11,10 @@ import java.io.IOException;
 
 public class MeSHSPARQL {
 
+    /**
+     * Queries MeSH SPARQL interface for descriptors and disease names (terms), saves output to out/csv/mesh.csv
+     * @param args
+     */
     public static void main(String[] args) {
 
         // Setup filtered OutputStream to CSV-File
@@ -53,7 +57,7 @@ public class MeSHSPARQL {
             QueryEngineHTTP qe = new QueryEngineHTTP("http://id.nlm.nih.gov/mesh/sparql", query);
             qe.addParam("inference", "true");
             qe.addParam("year", "current");
-            //qe.addParam("limit", "1000");       // Limit of 1000 is max value and default --> use offset
+            //qe.addParam("limit", "1000");       // Limit of 1000 is max value and default --> use offset instead
             qe.addParam("offset", offset + "");
 
             // Execute the query with the current offset & process the results
