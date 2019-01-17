@@ -389,7 +389,7 @@ public class MyAffinityFunction implements AffinityFunction, Serializable {
 
         // Identify the cluster to which this term belongs
         // First check if term is equal to the head of i-th cluster (store heads during check for further identification)
-        String[] head = (String[]) new Object[clusters.size()];
+        String[] head = new String[clusters.size()];
         for (int i = 0; i < clusters.size(); i++) {
             head[i] = clusters.get(i).getHead();
             if (term.equals(head[i]))

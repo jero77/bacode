@@ -86,7 +86,8 @@
         <!--faker-->
         <dependency>
             <groupId>com.github.javafaker</groupId>
-            <artifactId>Faker</artifactId>
+            <artifactId>javafaker</artifactId>
+            <version>0.16</version>
         </dependency>
 
     </dependencies>

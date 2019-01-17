@@ -177,7 +177,7 @@ public class IgniteSetupCaches {
         int numTerms = terms.size();
 
         // Get the info cache
-        IgniteCache<InfoKey, Info> cacheInfo = this.client.cache("info");
+        IgniteCache<InfoKey, Info> cacheInfo = this.client.getOrCreateCache(cacheConfigInfo);
 
         for (int i = 0; i < size; i++) {
 
@@ -283,6 +283,7 @@ public class IgniteSetupCaches {
 //
 //            });
 
+        conn.close();
     }
 
 }
