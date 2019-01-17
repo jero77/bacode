@@ -82,5 +82,12 @@
             <version>4.2</version>
         </dependency>
 
+
+        <!--faker-->
+        <dependency>
+            <groupId>com.github.javafaker</groupId>
+            <artifactId>Faker</artifactId>
+        </dependency>
+
     </dependencies>
 </project>
