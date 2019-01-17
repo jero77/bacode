@@ -6,25 +6,29 @@ import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
 import org.apache.ignite.spi.discovery.tcp.ipfinder.multicast.TcpDiscoveryMulticastIpFinder;
 import org.apache.ignite.spi.discovery.tcp.ipfinder.vm.TcpDiscoveryVmIpFinder;
 
+import java.io.File;
 import java.util.Arrays;
 
 public class IgniteStartNode {
 
     public static void main(String[] args) {
 
-        // Discovery
-        TcpDiscoverySpi spi = new TcpDiscoverySpi();
-        TcpDiscoveryVmIpFinder ipFinder = new TcpDiscoveryVmIpFinder();
-        ipFinder.setAddresses(Arrays.asList("127.0.0.1:47500..47509"));
-        spi.setIpFinder(ipFinder);
+//        // Discovery
+//        TcpDiscoverySpi spi = new TcpDiscoverySpi();
+//        TcpDiscoveryVmIpFinder ipFinder = new TcpDiscoveryVmIpFinder();
+//        ipFinder.setAddresses(Arrays.asList("127.0.0.1:47500..47509"));
+//        spi.setIpFinder(ipFinder);
+//
+//        // Configuration
+//        IgniteConfiguration cfg = new IgniteConfiguration();
+//        cfg.setDiscoverySpi(spi)
+//                .setClientMode(false)
+//                .setPeerClassLoadingEnabled(true);
+//
+//        // Start the node
+//        Ignition.start(cfg);
 
-        // Configuration
-        IgniteConfiguration cfg = new IgniteConfiguration();
-        cfg.setDiscoverySpi(spi)
-                .setClientMode(false)
-                .setPeerClassLoadingEnabled(true);
-
-        // Start the node
-        Ignition.start(cfg);
+        String separ = File.separator;
+        Ignition.start(System.getenv("IGNITE_HOME") + "examples " + separ + "config");
     }
 }
