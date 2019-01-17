@@ -13,22 +13,23 @@ public class IgniteStartNode {
 
     public static void main(String[] args) {
 
-//        // Discovery
-//        TcpDiscoverySpi spi = new TcpDiscoverySpi();
-//        TcpDiscoveryVmIpFinder ipFinder = new TcpDiscoveryVmIpFinder();
-//        ipFinder.setAddresses(Arrays.asList("127.0.0.1:47500..47509"));
-//        spi.setIpFinder(ipFinder);
-//
-//        // Configuration
-//        IgniteConfiguration cfg = new IgniteConfiguration();
-//        cfg.setDiscoverySpi(spi)
-//                .setClientMode(false)
-//                .setPeerClassLoadingEnabled(true);
-//
-//        // Start the node
-//        Ignition.start(cfg);
+        // Discovery
+        TcpDiscoverySpi spi = new TcpDiscoverySpi();
+        TcpDiscoveryVmIpFinder ipFinder = new TcpDiscoveryVmIpFinder();
+        ipFinder.setAddresses(Arrays.asList("192.168.1.1:47500..47509", "192.168.1.2:47500..47509"));
+        spi.setIpFinder(ipFinder);
 
-        String separ = File.separator;
-        Ignition.start(System.getenv("IGNITE_HOME") + "examples " + separ + "config");
+        // Configuration
+        IgniteConfiguration cfg = new IgniteConfiguration();
+        cfg.setDiscoverySpi(spi)
+                .setClientMode(false)
+                .setPeerClassLoadingEnabled(true);
+
+        // Start the node
+        Ignition.start(cfg);
+
+//        String separ = File.separator;
+//        Ignition.start(System.getenv("IGNITE_HOME") + separ + "examples" + separ + "config" + separ
+//                + "myconfig.xml");
     }
 }

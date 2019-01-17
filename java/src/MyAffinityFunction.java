@@ -418,11 +418,15 @@ public class MyAffinityFunction implements AffinityFunction, Serializable {
         return clusters;
     }
 
+    public ArrayList<String> getTerms() {
+        return terms;
+    }
 
-//##################### MAIN-Method  ######################
+
+    //##################### MAIN-Method  ######################
 
     /**
-     * Test unit
+     * Test unit for clustering for different datasets finetuning the parameter alpha
      *
      * @param args Not used
      */
