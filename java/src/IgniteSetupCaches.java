@@ -4,14 +4,17 @@ import org.apache.ignite.IgniteCache;
 import org.apache.ignite.IgniteException;
 import org.apache.ignite.Ignition;
 import org.apache.ignite.cache.CacheMode;
+import org.apache.ignite.cache.affinity.AffinityFunctionContext;
 import org.apache.ignite.cache.query.*;
 import org.apache.ignite.client.ClientException;
 import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
+import org.apache.ignite.internal.processors.affinity.GridAffinityFunctionContextImpl;
 import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
 import org.apache.ignite.spi.discovery.tcp.ipfinder.vm.TcpDiscoveryVmIpFinder;
 
 import javax.cache.Cache.Entry;
+import java.io.File;
 import java.sql.*;
 import java.util.*;
 
@@ -89,15 +92,15 @@ public class IgniteSetupCaches {
         this.clientConfig = new IgniteConfiguration();
         this.clientConfig.setClientMode(true)
                 .setDiscoverySpi(spi)
-                .setCacheConfiguration(cacheConfigurations)
-                .setPeerClassLoadingEnabled(true);
+                .setCacheConfiguration(cacheConfigurations);
+//                .setPeerClassLoadingEnabled(true);
 
         // Connect this client to the cluster & get or create the caches
         this.client = Ignition.start(this.clientConfig);
         System.out.println("Connected!");
 
         client.getOrCreateCaches(Arrays.asList(cacheConfigurations));
-        System.out.println("Created all the caches: " + client.cacheNames());
+        System.out.println("Got/created all the caches: " + client.cacheNames());
     }
 
 
@@ -181,6 +184,8 @@ public class IgniteSetupCaches {
         // Get the info cache
         IgniteCache<InfoKey, Info> cacheInfo = this.client.getOrCreateCache(this.cacheConfigInfo);
 
+
+
         for (int i = 0; i < size; i++) {
 
             // Some random disease for a random personID (bound by argument p)
@@ -206,7 +211,6 @@ public class IgniteSetupCaches {
             else                        // Generate a new person
                 info = new Info(infoKey);
             cacheInfo.putIfAbsent(infoKey, info);
-            System.out.println("Put " + i + "-th item.");
         }
 
     }
@@ -221,7 +225,10 @@ public class IgniteSetupCaches {
     public static void main(String[] args) throws ClassNotFoundException, SQLException {
 
         // Affinity function, calculates clustering in constructor
-        MyAffinityFunction myAffinityFunction = new MyAffinityFunction(0.2);
+        String separ = File.separator;
+        String termsFile = "out" + separ + "csv" + separ + "terms30.txt";
+        String simFile = "out" + separ + "csv" + separ + "result30.csv";
+        MyAffinityFunction myAffinityFunction = new MyAffinityFunction(0.13, termsFile, simFile);
 
         // Setup (Configs, create Caches)
         IgniteSetupCaches setup = new IgniteSetupCaches(myAffinityFunction,
@@ -229,19 +236,38 @@ public class IgniteSetupCaches {
 
 
         // Put some data to test:
-        setup.putRandomData(10, 40);
+        Collection<IgniteCache> fragCaches = setup.client.getOrCreateCaches(Arrays.asList(setup.fragmentConfigs));
+        for (IgniteCache c : fragCaches)
+            c.clear();
+        setup.client.getOrCreateCache(setup.cacheConfigInfo).clear();
+        setup.putRandomData(1000, 4000);
         setup.disconnectClient();
 
 
         // Open the JDBC connection
         Class.forName("org.apache.ignite.IgniteJdbcThinDriver");
-        Connection conn = DriverManager.getConnection("jdbc:ignite:thin://192.168.0.50");
+        Connection conn = DriverManager.getConnection("jdbc:ignite:thin://192.168.1.1");
         Statement stmt = conn.createStatement();
-        ResultSet res = stmt.executeQuery("SELECT * FROM INFO");
+        ResultSet res = stmt.executeQuery("SELECT p.ID, i.DISEASE FROM \"ill_0\".ILL i, \"info\".INFO p " +
+                        "WHERE p.ID = i.PERSONID ORDER BY p.ID");
+
+        System.out.println("All persons that have a disease similar to " + myAffinityFunction.getClusters().get(0).getHead());
+        System.out.println("Adom="+myAffinityFunction.getClusters().get(0).getAdom());
         while (res.next()) {
-            System.out.println(res.getInt(1) + ", " + res.getString(2) + ", "
-                    + res.getString(2));
+            System.out.println(res.getString(1) + ", " + res.getString(2));
         }
+        System.out.println("\n-------------------------------------------------------------------\n");
+
+
+        res = stmt.executeQuery("SELECT p.ID, i.DISEASE FROM \"ill_1\".ILL i, \"info\".INFO p " +
+                        "WHERE p.ID = i.PERSONID ORDER BY p.ID");
+
+        System.out.println("All persons that have a disease similar to " + myAffinityFunction.getClusters().get(1).getHead());
+        System.out.println("Adom="+myAffinityFunction.getClusters().get(1).getAdom());
+        while (res.next()) {
+            System.out.println(res.getString(1) + ", " + res.getString(2));
+        }
+        System.out.println("\n-------------------------------------------------------------------\n");
 
         // TODO test SQL (insert) queries maybe?
 

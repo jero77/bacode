@@ -262,8 +262,8 @@ public class MyAffinityFunction implements AffinityFunction, Serializable {
         // TODO Assign partition i to the node it belongs to according to the clustering-based fragmentation
         // TODO or according to the bin packing problem?!?!
         // TODO adapt assingment to depend on number of nodes and  (currently mod)
-        /* (assuming i partitions and i nodes)
-           The i-th partition is assigned to the (i % number of nodes)-th node
+        /* (assuming i partitions and k nodes, k <= i)
+           The i-th partition is assigned to the (i % k)-th node
            Example: 2 Nodes
                 - partition 0 with respiratory diseases --> node 0, partition 1 with fractures --> node 1
         */

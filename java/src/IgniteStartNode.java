@@ -16,14 +16,14 @@ public class IgniteStartNode {
         // Discovery
         TcpDiscoverySpi spi = new TcpDiscoverySpi();
         TcpDiscoveryVmIpFinder ipFinder = new TcpDiscoveryVmIpFinder();
-        ipFinder.setAddresses(Arrays.asList("192.168.1.1:47500", "192.168.1.2:47500"));
+        ipFinder.setAddresses(Arrays.asList("192.168.1.1:47500..47501", "192.168.1.2:47500..47501"));
         spi.setIpFinder(ipFinder);
 
         // Configuration
         IgniteConfiguration cfg = new IgniteConfiguration();
         cfg.setDiscoverySpi(spi)
-                .setClientMode(false)
-                .setPeerClassLoadingEnabled(true);
+                .setClientMode(false);
+//                .setPeerClassLoadingEnabled(true);
 
         // Start the node
         Ignition.start(cfg);
