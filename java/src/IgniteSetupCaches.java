@@ -269,6 +269,7 @@ public class IgniteSetupCaches {
         }
         System.out.println("\n-------------------------------------------------------------------\n");
 
+
         // TODO test SQL (insert) queries maybe?
 
 //        // Some test query (no rewriting yet) -> cache has to be identified for correct querying
