@@ -16,7 +16,7 @@ public class IgniteStartNode {
         // Discovery
         TcpDiscoverySpi spi = new TcpDiscoverySpi();
         TcpDiscoveryVmIpFinder ipFinder = new TcpDiscoveryVmIpFinder();
-        ipFinder.setAddresses(Arrays.asList("192.168.1.1:47500..47509", "192.168.1.2:47500..47509"));
+        ipFinder.setAddresses(Arrays.asList("192.168.1.1:47500", "192.168.1.2:47500"));
         spi.setIpFinder(ipFinder);
 
         // Configuration
