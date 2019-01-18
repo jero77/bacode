@@ -48,6 +48,7 @@ public class IgniteSetupCaches {
     private IgniteConfiguration clientConfig;
 
 
+
 // ################################ Constructors ###############################################
 
     /**
@@ -84,7 +85,7 @@ public class IgniteSetupCaches {
         spi.setIpFinder(ipFinder);
 
         // Ignite Configuration
-        CacheConfiguration[] cacheConfigurations = ArrayUtils.addAll(this.fragmentConfigs, this.cacheConfigIll);
+        CacheConfiguration[] cacheConfigurations = ArrayUtils.addAll(this.fragmentConfigs, this.cacheConfigInfo);
         this.clientConfig = new IgniteConfiguration();
         this.clientConfig.setClientMode(true)
                 .setDiscoverySpi(spi)
@@ -96,6 +97,7 @@ public class IgniteSetupCaches {
         System.out.println("Connected!");
 
         client.getOrCreateCaches(Arrays.asList(cacheConfigurations));
+        System.out.println("Created all the caches: " + client.cacheNames());
     }
 
 
@@ -177,7 +179,7 @@ public class IgniteSetupCaches {
         int numTerms = terms.size();
 
         // Get the info cache
-        IgniteCache<InfoKey, Info> cacheInfo = this.client.getOrCreateCache(cacheConfigInfo);
+        IgniteCache<InfoKey, Info> cacheInfo = this.client.getOrCreateCache(this.cacheConfigInfo);
 
         for (int i = 0; i < size; i++) {
 
@@ -204,7 +206,9 @@ public class IgniteSetupCaches {
             else                        // Generate a new person
                 info = new Info(infoKey);
             cacheInfo.putIfAbsent(infoKey, info);
+            System.out.println("Put " + i + "-th item.");
         }
+
     }
 
 
