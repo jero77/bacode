@@ -92,8 +92,8 @@ public class IgniteSetupCaches {
         this.clientConfig = new IgniteConfiguration();
         this.clientConfig.setClientMode(true)
                 .setDiscoverySpi(spi)
-                .setCacheConfiguration(cacheConfigurations);
-//                .setPeerClassLoadingEnabled(true);
+                .setCacheConfiguration(cacheConfigurations)
+                .setPeerClassLoadingEnabled(true);
 
         // Connect this client to the cluster & get or create the caches
         this.client = Ignition.start(this.clientConfig);
@@ -232,7 +232,7 @@ public class IgniteSetupCaches {
 
         // Setup (Configs, create Caches)
         IgniteSetupCaches setup = new IgniteSetupCaches(myAffinityFunction,
-                Arrays.asList("192.168.1.1:47500..47509", "192.168.1.2:47500..47509"));
+                Arrays.asList("141.5.107.8:47500..47509", "141.5.107.75:47500..47509", "141.5.107.76:47500..47509"));
 
 
         // Put some data to test:
